@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Plasma Physics Virtual Laboratory</title>
+<style>
+  :root{
+    --bg:#0a0d14; --panel:#111623; --panel-2:#161d2e; --line:#232b3d;
+    --text:#e7ebf3; --text-dim:#8b93a8;
+    --ion:#22d3ee; --electron:#a78bfa; --trace:#f5b942; --ok:#4ade80; --warn:#f87171;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(167,139,250,0.10), transparent 60%),
+      radial-gradient(ellipse 900px 600px at 100% 0%, rgba(34,211,238,0.08), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.5; min-height:100vh;
+  }
+  .mono{ font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace; }
+
+  header.top{ padding:22px 28px 16px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:4px; position:relative; }
+  .langbar{ position:absolute; top:20px; right:28px; display:flex; align-items:center; gap:10px; }
+  .langbar .langlabel{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.08em; }
+  .langbar button.langbtn{
+    font: inherit; font-size:12.5px; font-weight:700; color:var(--text-dim); background:none;
+    text-decoration:none; padding:5px 10px; border-radius:6px; border:1px solid var(--line);
+    cursor:pointer; transition:all .15s;
+  }
+  .langbar button.langbtn:hover{ color:var(--text); border-color:#3a4568; }
+  .langbar button.langbtn.active{ color:#0a0d14; background:var(--electron); border-color:var(--electron); }
+  @media (max-width:720px){ .langbar{ position:static; margin-top:12px; } }
+
+  header.top .eyebrow{ text-transform:uppercase; letter-spacing:.12em; font-size:11px; color:var(--electron); font-weight:600; }
+  header.top h1{ margin:2px 0 4px; font-size:26px; font-weight:700; letter-spacing:-0.01em; max-width:820px; }
+  header.top p{ margin:0; color:var(--text-dim); font-size:14px; max-width:760px;}
+
+  nav.tabs{ display:flex; gap:6px; padding:14px 28px 0; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  nav.tabs button{
+    background:none; border:none; color:var(--text-dim); font-size:14px; font-weight:600;
+    padding:10px 16px; cursor:pointer; border-bottom:2px solid transparent; border-radius:6px 6px 0 0;
+    transition:color .15s, border-color .15s, background .15s;
+  }
+  nav.tabs button:hover{ color:var(--text); background:rgba(255,255,255,0.03); }
+  nav.tabs button.active{ color:var(--text); border-bottom-color:var(--electron); }
+
+  main{ padding:26px 28px 60px; max-width:1180px; margin:0 auto; }
+  .module{ display:none; }
+  .module.active{ display:block; }
+
+  .layout{ display:grid; grid-template-columns: 1fr 320px; gap:18px; align-items:start; }
+  @media (max-width:880px){ .layout{ grid-template-columns:1fr; } }
+
+  .card{ background:linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+  .card + .card{ margin-top:14px; }
+  .card h3{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); font-weight:700;}
+
+  canvas{ display:block; width:100%; height:auto; background:#070a10; border-radius:8px; border:1px solid var(--line); }
+
+  .controls label{ display:block; font-size:12.5px; color:var(--text-dim); margin:14px 0 5px; }
+  .controls label:first-child{ margin-top:0; }
+  .sliderRow{ display:flex; align-items:center; gap:8px; }
+  .sliderRow input[type=range]{ flex:1; accent-color:var(--electron); }
+  .numIn{
+    width:88px; background:#0c1019; border:1px solid var(--line); color:var(--trace);
+    border-radius:6px; padding:5px 6px; font-size:12.5px; font-family: ui-monospace, monospace; text-align:right;
+  }
+  .numIn:focus{ outline:1px solid var(--electron); border-color:var(--electron); }
+  .unitTag{ font-size:11.5px; color:var(--text-dim); min-width:34px; }
+  .controls select{
+    width:100%; background:#0c1019; border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:7px 8px; font-size:13px;
+  }
+  .controls input[type=number].plain{
+    width:100%; background:#0c1019; border:1px solid var(--line); color:var(--text);
+    border-radius:6px; padding:7px 8px; font-size:13px;
+  }
+  .btnrow{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  button.btn{
+    background:#1a2236; border:1px solid var(--line); color:var(--text);
+    padding:8px 14px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer;
+    transition:background .15s, border-color .15s;
+  }
+  button.btn:hover{ background:#212b45; border-color:#33406a; }
+  button.btn.primary{ background:linear-gradient(180deg,#7c5cf0,#6845d6); border-color:#7c5cf0; }
+  button.btn.primary:hover{ filter:brightness(1.08); }
+  button.btn.ghost{ background:transparent; }
+
+  .readout{ display:grid; grid-template-columns:1fr auto; gap:6px 10px; font-size:13px; }
+  .readout dt{ color:var(--text-dim); grid-column:1; }
+  .readout dd{ margin:0; grid-column:2; text-align:right; color:var(--text); }
+  .readout .hl{ color:var(--ion); }
+
+  table.datalog{ width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+  table.datalog th, table.datalog td{ text-align:right; padding:5px 6px; border-bottom:1px solid var(--line); }
+  table.datalog th:first-child, table.datalog td:first-child{ text-align:left; }
+  table.datalog th{ color:var(--text-dim); font-weight:600; }
+  .logwrap{ max-height:170px; overflow-y:auto; border:1px solid var(--line); border-radius:6px; margin-top:6px;}
+
+  .note{ font-size:12.5px; color:var(--text-dim); background:#0d1220; border:1px dashed var(--line); border-radius:8px; padding:10px 12px; margin-top:14px; }
+  .note b{ color:var(--text); }
+  .formula{ font-size:13px; color:var(--trace); margin:4px 0; }
+
+  .legend{ display:flex; gap:16px; font-size:12px; color:var(--text-dim); margin-top:8px; flex-wrap:wrap; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  footer.foot{ border-top:1px solid var(--line); padding:20px 28px; color:var(--text-dim); font-size:12px; text-align:center; }
+
+  .assign-exp{ margin-bottom:34px; }
+  .assign-exp h2{ font-size:19px; margin:0 0 4px; display:flex; align-items:center; gap:10px; }
+  .assign-exp .exp-num{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%;
+    background:rgba(167,139,250,0.16); color:var(--electron); font-size:13px; font-weight:700;
+    border:1px solid rgba(167,139,250,0.4); flex:none;
+  }
+  .assign-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-top:12px; }
+  @media (max-width:880px){ .assign-grid{ grid-template-columns:1fr; } }
+  .assign-grid .card{ margin-top:0; }
+  ol.tasklist{ margin:0; padding-left:20px; }
+  ol.tasklist li{ margin-bottom:10px; font-size:13.5px; }
+  ol.tasklist li b{ color:var(--trace); }
+  ul.objectives{ margin:0; padding-left:20px; }
+  ul.objectives li{ margin-bottom:6px; font-size:13.5px; color:var(--text); }
+  .purpose{ font-size:13.5px; color:var(--text); }
+  .problem{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-bottom:10px; background:#0d1220; }
+  .problem p{ margin:0 0 4px; font-size:13.5px; }
+  .problem .given{ color:var(--text-dim); font-size:12.5px; }
+  details.answer{ margin-top:8px; }
+  details.answer summary{ cursor:pointer; color:var(--ion); font-size:12.5px; font-weight:600; list-style:none; user-select:none; }
+  details.answer summary::-webkit-details-marker{ display:none; }
+  details.answer summary::before{ content:"\25B8 "; }
+  details.answer[open] summary::before{ content:"\25BE "; }
+  details.answer .solution{ margin-top:8px; padding:10px; background:#0a0e18; border-left:2px solid var(--ok); border-radius:4px; font-size:13px; }
+  details.answer .solution .mono{ color:var(--ok); }
+  .discuss{ font-size:13.5px; }
+  .discuss li{ margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="langbar">
+    <span class="langlabel" data-i18n="lang_label">Language:</span>
+    <button type="button" class="langbtn" data-lang="en">English</button>
+    <button type="button" class="langbtn" data-lang="ru">Русский</button>
+    <button type="button" class="langbtn" data-lang="kk">Қазақша</button>
+  </div>
+  <span class="eyebrow" data-i18n="h_eyebrow">Virtual Laboratory · Plasma Physics</span>
+  <h1 data-i18n="h_title">Plasma Physics Virtual Laboratory</h1>
+  <p data-i18n="h_subtitle">An offline, dependency-free research environment...</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-target="exb" data-i18n="nav_m1">1 · Charged Particle in E×B Fields</button>
+  <button class="tab-btn" data-target="langmuir" data-i18n="nav_m2">2 · Plasma (Langmuir) Oscillations</button>
+  <button class="tab-btn" data-target="debye" data-i18n="nav_m3">3 · Debye Shielding</button>
+  <button class="tab-btn" data-target="assignments" data-i18n="nav_a">Student Assignments</button>
+</nav>
+
+<main>
+
+<!-- ================= MODULE 1: E x B ================= -->
+<section class="module active" id="exb">
+  <div class="layout">
+    <div>
+      <div class="card">
+        <h3 data-i18n="m1_canvas_title">Trajectory</h3>
+        <canvas id="cvExb" width="900" height="560"></canvas>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--electron)"></i><span data-i18n="m1_leg_path">Particle path</span></span>
+          <span><i class="swatch" style="background:var(--ion)"></i><span data-i18n="m1_leg_drift">E×B drift direction</span></span>
+          <span><i class="swatch" style="background:var(--trace)"></i><span data-i18n="m1_leg_pos">Current position</span></span>
+        </div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="lbl_theory">Theory</h3>
+        <p class="formula" data-i18n="m1_f1"></p>
+        <p class="formula" data-i18n="m1_f2"></p>
+        <p class="formula" data-i18n="m1_f3"></p>
+        <div class="note" data-i18n-html="m1_note"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="card">
+        <h3 data-i18n="lbl_parameters">Parameters</h3>
+        <label data-i18n="m1_particle_label">Particle</label>
+        <select id="exbParticle">
+          <option value="electron" data-i18n="m1_opt_electron">Electron</option>
+          <option value="proton" selected data-i18n="m1_opt_proton">Proton</option>
+          <option value="deuteron" data-i18n="m1_opt_deuteron">Deuteron</option>
+          <option value="alpha" data-i18n="m1_opt_alpha">Alpha particle</option>
+        </select>
+
+        <label data-i18n="m1_lbl_B">Magnetic field B</label>
+        <div class="sliderRow">
+          <input type="range" id="exbB" min="0.001" max="2" step="0.001" value="0.3">
+          <input type="number" id="exbB_num" class="numIn" step="any"><span class="unitTag">T</span>
+        </div>
+
+        <label data-i18n="m1_lbl_E">Electric field E</label>
+        <div class="sliderRow">
+          <input type="range" id="exbE" min="0" max="8000" step="10" value="1500">
+          <input type="number" id="exbE_num" class="numIn" step="any"><span class="unitTag">V/m</span>
+        </div>
+
+        <label data-i18n="m1_lbl_v0">Initial speed v₀</label>
+        <div class="sliderRow">
+          <input type="range" id="exbV" min="1000" max="8000000" step="1000" value="1200000">
+          <input type="number" id="exbV_num" class="numIn" step="any"><span class="unitTag">m/s</span>
+        </div>
+
+        <label data-i18n="m1_lbl_angle">Initial pitch angle θ₀</label>
+        <div class="sliderRow">
+          <input type="range" id="exbAngle" min="0" max="360" step="1" value="30">
+          <input type="number" id="exbAngle_num" class="numIn" step="any"><span class="unitTag">deg</span>
+        </div>
+
+        <label data-i18n="m1_lbl_speed">Animation speed</label>
+        <div class="sliderRow">
+          <input type="range" id="exbSpeed" min="0.1" max="3" step="0.1" value="1">
+          <input type="number" id="exbSpeed_num" class="numIn" step="any"><span class="unitTag">×</span>
+        </div>
+
+        <div class="btnrow">
+          <button class="btn primary" id="exbPlay" data-i18n="btn_play">Play</button>
+          <button class="btn" id="exbReset" data-i18n="btn_reset">Reset</button>
+          <button class="btn ghost" id="exbLog" data-i18n="btn_record">Record data point</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m1_readout_title">Live Readouts</h3>
+        <dl class="readout" id="exbReadout"></dl>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m1_datalog_title">Data Log</h3>
+        <div class="logwrap">
+          <table class="datalog" id="exbTable">
+            <thead><tr><th>τ</th><th>x̂</th><th>ŷ</th><th>v̂</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="btnrow">
+          <button class="btn" id="exbExport" data-i18n="btn_export_csv">Export CSV</button>
+          <button class="btn ghost" id="exbClear" data-i18n="btn_clear_log">Clear log</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 2: LANGMUIR ================= -->
+<section class="module" id="langmuir">
+  <div class="layout">
+    <div>
+      <div class="card">
+        <h3 data-i18n="m2_slab_title">Electron sheet vs. ion background</h3>
+        <canvas id="cvSlab" width="900" height="150"></canvas>
+      </div>
+      <div class="card">
+        <h3 data-i18n="m2_trace_title">Oscilloscope trace</h3>
+        <canvas id="cvTrace" width="900" height="260"></canvas>
+        <div class="btnrow"><button class="btn" id="lgClearMarks" data-i18n="btn_clear_marks">Clear marks</button></div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="lbl_theory">Theory</h3>
+        <p class="formula" data-i18n="m2_f1"></p>
+        <div class="note" data-i18n-html="m2_note"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="card">
+        <h3 data-i18n="lbl_parameters">Parameters</h3>
+        <label data-i18n="m2_lbl_n">Electron density n</label>
+        <div class="sliderRow">
+          <input type="range" id="lgN" min="10" max="20" step="0.01" value="17">
+          <input type="number" id="lgN_num" class="numIn" step="any"><span class="unitTag">m⁻³</span>
+        </div>
+        <div class="note" style="margin-top:6px;" data-i18n="m2_note_slider"></div>
+        <div class="btnrow">
+          <button class="btn primary" id="lgPlay" data-i18n="btn_play">Play</button>
+          <button class="btn" id="lgReset" data-i18n="btn_reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m2_theo_title">Theoretical Values</h3>
+        <dl class="readout" id="lgReadout"></dl>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m2_meas_title">Your Measurement</h3>
+        <dl class="readout" id="lgMeasure">
+          <dt data-i18n="m2_m_p1">Peak 1 (τ)</dt><dd id="lgP1">—</dd>
+          <dt data-i18n="m2_m_p2">Peak 2 (τ)</dt><dd id="lgP2">—</dd>
+          <dt data-i18n="m2_m_T">Measured T</dt><dd id="lgTmeas">—</dd>
+          <dt data-i18n="m2_m_f">Measured f</dt><dd id="lgFmeas">—</dd>
+          <dt data-i18n="m2_m_err">Error vs theory</dt><dd id="lgErr">—</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODULE 3: DEBYE ================= -->
+<section class="module" id="debye">
+  <div class="layout">
+    <div>
+      <div class="card">
+        <h3 data-i18n="m3_canvas_title">Potential around a test charge</h3>
+        <canvas id="cvDebye" width="900" height="480"></canvas>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--electron)"></i><span data-i18n="m3_leg_screened"></span></span>
+          <span><i class="swatch" style="background:var(--ion)"></i><span data-i18n="m3_leg_bare"></span></span>
+          <span><i class="swatch" style="background:var(--trace)"></i><span data-i18n="m3_leg_probe"></span></span>
+        </div>
+      </div>
+      <div class="card">
+        <h3 data-i18n="lbl_theory">Theory</h3>
+        <p class="formula" data-i18n="m3_f1"></p>
+        <p class="formula" data-i18n="m3_f2"></p>
+        <div class="note" data-i18n-html="m3_note"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="card">
+        <h3 data-i18n="lbl_parameters">Parameters</h3>
+        <label data-i18n="m2_lbl_n">Electron density n</label>
+        <div class="sliderRow">
+          <input type="range" id="dbN" min="10" max="20" step="0.01" value="16">
+          <input type="number" id="dbN_num" class="numIn" step="any"><span class="unitTag">m⁻³</span>
+        </div>
+        <div class="note" style="margin-top:6px;" data-i18n="m3_note_n"></div>
+
+        <label data-i18n="m3_lbl_T">Electron temperature T_e</label>
+        <div class="sliderRow">
+          <input type="range" id="dbT" min="-1" max="2" step="0.01" value="1">
+          <input type="number" id="dbT_num" class="numIn" step="any"><span class="unitTag">eV</span>
+        </div>
+        <div class="note" style="margin-top:6px;" data-i18n="m3_note_T"></div>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m3_probe_title">Probe Readout</h3>
+        <dl class="readout" id="dbReadout"></dl>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="m3_meas_title">Your Measurement</h3>
+        <label data-i18n="m3_lbl_guess">Your estimate of λ_D (m)</label>
+        <input type="number" id="dbGuess" class="plain" step="any" data-i18n-ph="m3_ph_guess">
+        <div class="btnrow"><button class="btn primary" id="dbCheck" data-i18n="btn_check">Check estimate</button></div>
+        <dl class="readout" id="dbCheckOut" style="margin-top:10px;"></dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ASSIGNMENTS TAB ================= -->
+<section class="module" id="assignments">
+
+  <div class="assign-exp">
+    <h2><span class="exp-num">1</span> <span data-i18n="a_e1_title"></span></h2>
+    <div class="card"><h3 data-i18n="lbl_purpose">Purpose</h3><p class="purpose" data-i18n="a_e1_purpose"></p></div>
+    <div class="assign-grid">
+      <div class="card"><h3 data-i18n="lbl_objectives">Learning Objectives</h3><ul class="objectives" data-i18n-html="a_e1_obj"></ul></div>
+      <div class="card"><h3 data-i18n="lbl_tasks">Procedure / Tasks</h3><ol class="tasklist" data-i18n-html="a_e1_tasks"></ol></div>
+    </div>
+    <div class="card"><h3 data-i18n="lbl_problems">Calculation Problems</h3><div data-i18n-html="a_e1_problems"></div></div>
+  </div>
+
+  <div class="assign-exp">
+    <h2><span class="exp-num">2</span> <span data-i18n="a_e2_title"></span></h2>
+    <div class="card"><h3 data-i18n="lbl_purpose">Purpose</h3><p class="purpose" data-i18n="a_e2_purpose"></p></div>
+    <div class="assign-grid">
+      <div class="card"><h3 data-i18n="lbl_objectives">Learning Objectives</h3><ul class="objectives" data-i18n-html="a_e2_obj"></ul></div>
+      <div class="card"><h3 data-i18n="lbl_tasks">Procedure / Tasks</h3><ol class="tasklist" data-i18n-html="a_e2_tasks"></ol></div>
+    </div>
+    <div class="card"><h3 data-i18n="lbl_problems">Calculation Problems</h3><div data-i18n-html="a_e2_problems"></div></div>
+  </div>
+
+  <div class="assign-exp">
+    <h2><span class="exp-num">3</span> <span data-i18n="a_e3_title"></span></h2>
+    <div class="card"><h3 data-i18n="lbl_purpose">Purpose</h3><p class="purpose" data-i18n="a_e3_purpose"></p></div>
+    <div class="assign-grid">
+      <div class="card"><h3 data-i18n="lbl_objectives">Learning Objectives</h3><ul class="objectives" data-i18n-html="a_e3_obj"></ul></div>
+      <div class="card"><h3 data-i18n="lbl_tasks">Procedure / Tasks</h3><ol class="tasklist" data-i18n-html="a_e3_tasks"></ol></div>
+    </div>
+    <div class="card"><h3 data-i18n="lbl_problems">Calculation Problems</h3><div data-i18n-html="a_e3_problems"></div></div>
+  </div>
+
+  <div class="card">
+    <h3 data-i18n="a_discuss_title">Discussion Questions</h3>
+    <ul class="discuss" data-i18n-html="a_discuss"></ul>
+  </div>
+
+</section>
+
+</main>
+
+<footer class="foot" data-i18n="footer">Single-file, offline research environment...</footer>
+
+<script>
+"use strict";
+
+const I18N = {"h_eyebrow": {"en": "Virtual Laboratory · Plasma Physics", "ru": "Виртуальная лаборатория · Физика плазмы", "kk": "Виртуалды зертхана · Плазма физикасы"}, "h_title": {"en": "Plasma Physics Virtual Laboratory", "ru": "Виртуальная лаборатория физики плазмы", "kk": "Плазма физикасының виртуалды зертханасы"}, "h_subtitle": {"en": "An offline, dependency-free research environment for studying charged-particle dynamics, plasma oscillations, and Debye shielding. Adjust parameters, run each experiment, record measurements, and compare your data against theory — the same workflow used in an experimental physics lab notebook.", "ru": "Автономная исследовательская среда без внешних зависимостей для изучения динамики заряженных частиц, плазменных колебаний и дебаевского экранирования. Изменяйте параметры, проводите каждый эксперимент, записывайте измерения и сравнивайте свои данные с теорией — точно так же, как в лабораторном журнале экспериментальной физики.", "kk": "Зарядталған бөлшектердің динамикасын, плазмалық тербелістерді және Дебай экрандалуын зерттеуге арналған, сыртқы тәуелділіктерсіз, желісіз жұмыс істейтін зерттеу ортасы. Параметрлерді өзгертіп, әр экспериментті жүргізіп, өлшеу нәтижелерін жазып алыңыз және деректеріңізді теориямен салыстырыңыз — бұл эксперименттік физика зертханасының журналында қолданылатын жұмыс тәртібімен бірдей."}, "nav_m1": {"en": "1 · Charged Particle in E×B Fields", "ru": "1 · Заряженная частица в полях E×B", "kk": "1 · Зарядталған бөлшектің E×B өрістеріндегі қозғалысы"}, "nav_m2": {"en": "2 · Plasma (Langmuir) Oscillations", "ru": "2 · Плазменные (ленгмюровские) колебания", "kk": "2 · Плазмалық (Ленгмюр) тербелістері"}, "nav_m3": {"en": "3 · Debye Shielding", "ru": "3 · Дебаевское экранирование", "kk": "3 · Дебай экрандалуы"}, "nav_a": {"en": "Student Assignments", "ru": "Задания для студентов", "kk": "Студенттерге арналған тапсырмалар"}, "footer": {"en": "Single-file, offline research environment · pure HTML / CSS / JavaScript (Canvas 2D), no external libraries, fonts, or network requests · built for long-term, cross-browser stability.", "ru": "Автономная исследовательская среда в одном файле · чистые HTML / CSS / JavaScript (Canvas 2D), без внешних библиотек, шрифтов и сетевых запросов · создано для долговременной, кроссбраузерной стабильности.", "kk": "Бір файлдан тұратын, желісіз зерттеу ортасы · таза HTML / CSS / JavaScript (Canvas 2D), сыртқы кітапханалар, қаріптер және желілік сұраныстарсыз · ұзақ мерзімді, кез келген браузерде тұрақты жұмыс істеуге арналған."}, "lang_label": {"en": "Language:", "ru": "Язык:", "kk": "Тіл:"}, "btn_play": {"en": "Play", "ru": "Запуск", "kk": "Бастау"}, "btn_pause": {"en": "Pause", "ru": "Пауза", "kk": "Кідірту"}, "btn_reset": {"en": "Reset", "ru": "Сброс", "kk": "Бастапқы қалпына келтіру"}, "btn_export_csv": {"en": "Export CSV", "ru": "Экспорт в CSV", "kk": "CSV форматында экспорттау"}, "btn_clear_log": {"en": "Clear log", "ru": "Очистить журнал", "kk": "Журналды тазарту"}, "btn_clear_marks": {"en": "Clear marks", "ru": "Очистить метки", "kk": "Белгілерді тазарту"}, "btn_check": {"en": "Check estimate", "ru": "Проверить оценку", "kk": "Бағаны тексеру"}, "btn_record": {"en": "Record data point", "ru": "Записать точку данных", "kk": "Деректі жазу"}, "lbl_theory": {"en": "Theory", "ru": "Теория", "kk": "Теория"}, "lbl_parameters": {"en": "Parameters", "ru": "Параметры", "kk": "Параметрлер"}, "m1_canvas_title": {"en": "Trajectory · normalized units (x/r_L, y/r_L)", "ru": "Траектория · нормированные единицы (x/r_L, y/r_L)", "kk": "Траектория · нормаланған бірліктер (x/r_L, y/r_L)"}, "m1_leg_path": {"en": "Particle path", "ru": "Траектория частицы", "kk": "Бөлшектің траекториясы"}, "m1_leg_drift": {"en": "E×B drift direction", "ru": "Направление дрейфа E×B", "kk": "E×B дрейф бағыты"}, "m1_leg_pos": {"en": "Current position", "ru": "Текущее положение", "kk": "Ағымдағы орны"}, "m1_f1": {"en": "Cyclotron frequency: ω_c = |q|B / m", "ru": "Циклотронная частота: ω_c = |q|B / m", "kk": "Циклотрондық жиілік: ω_c = |q|B / m"}, "m1_f2": {"en": "Larmor radius: r_L = v₀ / ω_c", "ru": "Ларморовский радиус: r_L = v₀ / ω_c", "kk": "Лармор радиусы: r_L = v₀ / ω_c"}, "m1_f3": {"en": "E×B drift speed: v_d = E / B  (direction ⟂ to both E and B)", "ru": "Скорость дрейфа E×B: v_d = E / B (направление ⟂ к E и B)", "kk": "E×B дрейф жылдамдығы: v_d = E / B (E мен B-ге перпендикуляр бағытта)"}, "m1_note": {"en": "The motion is integrated exactly by solving the Lorentz force equation, then expressed in <b>normalized coordinates</b> (distance in units of r_L, time in units of the cyclotron period T_c). This is standard practice in plasma physics: it lets a single dimensionless parameter, <b>α = v_d / v₀</b> (drift speed over initial gyration speed), fully determine the shape of the orbit — a pure circle when α = 0, a cycloidal drift when α ≳ 1. The real-world values of ω_c, r_L, T_c and v_d for your chosen particle and fields are computed exactly and shown in the panel on the right.", "ru": "Движение точно интегрируется путём решения уравнения силы Лоренца, а затем выражается в <b>нормированных координатах</b> (расстояние в единицах r_L, время в единицах циклотронного периода T_c). Это стандартная практика в физике плазмы: единственный безразмерный параметр <b>α = v_d / v₀</b> (скорость дрейфа делённая на начальную скорость вращения) полностью определяет форму орбиты — чистая окружность при α = 0, циклоидальный дрейф при α ≳ 1. Реальные значения ω_c, r_L, T_c и v_d для выбранной частицы и полей вычисляются точно и показаны в панели справа.", "kk": "Қозғалыс Лоренц күшінің теңдеуін дәл шешу арқылы интегралданады, содан кейін <b>нормаланған координаттарда</b> өрнектеледі (қашықтық r_L бірлігімен, уақыт T_c циклотрон периоды бірлігімен). Бұл плазма физикасында қалыптасқан тәсіл: жалғыз өлшемсіз параметр <b>α = v_d / v₀</b> (дрейф жылдамдығының бастапқы айналу жылдамдығына қатынасы) орбитаның пішінін толық анықтайды — α = 0 болғанда таза шеңбер, α ≳ 1 болғанда циклоидты дрейф пайда болады. Таңдалған бөлшек пен өрістерге сәйкес ω_c, r_L, T_c және v_d нақты мәндері дәл есептеліп, оң жақтағы панельде көрсетіледі."}, "m1_particle_label": {"en": "Particle", "ru": "Частица", "kk": "Бөлшек"}, "m1_opt_electron": {"en": "Electron (q = −e)", "ru": "Электрон (q = −e)", "kk": "Электрон (q = −e)"}, "m1_opt_proton": {"en": "Proton (q = +e)", "ru": "Протон (q = +e)", "kk": "Протон (q = +e)"}, "m1_opt_deuteron": {"en": "Deuteron (q = +e)", "ru": "Дейтрон (q = +e)", "kk": "Дейтрон (q = +e)"}, "m1_opt_alpha": {"en": "Alpha particle (q = +2e)", "ru": "Альфа-частица (q = +2e)", "kk": "Альфа-бөлшек (q = +2e)"}, "m1_lbl_B": {"en": "Magnetic field B", "ru": "Магнитное поле B", "kk": "Магнит өрісі B"}, "m1_lbl_E": {"en": "Electric field E", "ru": "Электрическое поле E", "kk": "Электр өрісі E"}, "m1_lbl_v0": {"en": "Initial speed v₀", "ru": "Начальная скорость v₀", "kk": "Бастапқы жылдамдық v₀"}, "m1_lbl_angle": {"en": "Initial pitch angle θ₀", "ru": "Начальный угол направления θ₀", "kk": "Бастапқы бағыт бұрышы θ₀"}, "m1_lbl_speed": {"en": "Animation speed (cyclotron periods / s)", "ru": "Скорость анимации (циклотронных периодов/с)", "kk": "Анимация жылдамдығы (циклотрон периоды/с)"}, "m1_readout_title": {"en": "Live Readouts", "ru": "Текущие показания", "kk": "Ағымдағы көрсеткіштер"}, "m1_datalog_title": {"en": "Data Log", "ru": "Журнал данных", "kk": "Деректер журналы"}, "m1_r_particle": {"en": "Particle", "ru": "Частица", "kk": "Бөлшек"}, "m1_r_wc": {"en": "ω_c (cyclotron freq.)", "ru": "ω_c (циклотронная частота)", "kk": "ω_c (циклотрондық жиілік)"}, "m1_r_fc": {"en": "f_c", "ru": "f_c", "kk": "f_c"}, "m1_r_Tc": {"en": "T_c (cyclotron period)", "ru": "T_c (циклотронный период)", "kk": "T_c (циклотрон периоды)"}, "m1_r_rL": {"en": "r_L (Larmor radius)", "ru": "r_L (ларморовский радиус)", "kk": "r_L (Лармор радиусы)"}, "m1_r_vd": {"en": "v_d = E/B (drift speed)", "ru": "v_d = E/B (скорость дрейфа)", "kk": "v_d = E/B (дрейф жылдамдығы)"}, "m1_r_alpha": {"en": "α = v_d / v₀", "ru": "α = v_d / v₀", "kk": "α = v_d / v₀"}, "m1_r_elapsed": {"en": "elapsed sim time", "ru": "прошедшее время моделирования", "kk": "өткен модельдеу уақыты"}, "m1_canvas_grid": {"en": "grid spacing =", "ru": "шаг сетки =", "kk": "тор қадамы ="}, "m1_canvas_tau": {"en": "cyclotron periods", "ru": "циклотронных периодов", "kk": "циклотрон периоды"}, "m1_canvas_drift": {"en": "E×B drift", "ru": "дрейф E×B", "kk": "E×B дрейфі"}, "m2_slab_title": {"en": "Electron sheet vs. ion background (schematic, not to scale)", "ru": "Электронный слой и ионный фон (схематично, не в масштабе)", "kk": "Электрон қабаты мен ион фоны (схемалық, масштабсыз)"}, "m2_trace_title": {"en": "Oscilloscope trace — click two peaks to measure the period", "ru": "Осциллограмма — щёлкните по двум пикам, чтобы измерить период", "kk": "Осциллограф трассасы — периодты өлшеу үшін екі шыңды басыңыз"}, "m2_f1": {"en": "Plasma frequency: ω_p = √( n e² / (ε₀ m_e) )", "ru": "Плазменная частота: ω_p = √( n e² / (ε₀ m_e) )", "kk": "Плазмалық жиілік: ω_p = √( n e² / (ε₀ m_e) )"}, "m2_note": {"en": "Displacing the electron fluid by a small distance ξ from the fixed ion background creates a restoring electric field E = n e ξ / ε₀ (from Gauss's law for an infinite charged slab), giving simple harmonic motion ξ(t) = ξ₀ cos(ω_p t). <b>Your task:</b> mark two adjacent peaks on the trace to measure the period T directly from the simulated signal, then compare your measured frequency f = 1/T against the theoretical ω_p / 2π — exactly the kind of measurement-vs-theory comparison used in real plasma diagnostics (e.g. Langmuir probes, microwave interferometry).", "ru": "Смещение электронной жидкости на малое расстояние ξ от неподвижного ионного фона создаёт возвращающее электрическое поле E = n e ξ / ε₀ (из закона Гаусса для бесконечного заряженного слоя), что даёт простое гармоническое колебание ξ(t) = ξ₀ cos(ω_p t). <b>Ваша задача:</b> отметьте два соседних пика на осциллограмме, чтобы измерить период T непосредственно из сигнала, затем сравните измеренную частоту f = 1/T с теоретическим значением ω_p / 2π — именно так сравнивают измерение с теорией в реальной плазменной диагностике (например, зонды Ленгмюра, СВЧ-интерферометрия).", "kk": "Электрон сұйықтығын тыныш тұрған ион фонынан ξ шамасына ығыстыру қайтарушы электр өрісін тудырады: E = n e ξ / ε₀ (шексіз зарядталған қабат үшін Гаусс заңынан), нәтижесінде қарапайым гармоникалық тербеліс пайда болады: ξ(t) = ξ₀ cos(ω_p t). <b>Тапсырма:</b> трассадағы екі көрші шыңды белгілеп, период T мәнін тікелей сигналдан өлшеңіз, содан кейін өлшенген жиілік f = 1/T мәнін теориялық ω_p / 2π мәнімен салыстырыңыз — бұл нақты плазмалық диагностикада (мысалы, Ленгмюр зондтары, микротолқынды интерферометрия) қолданылатын өлшеу мен теорияны салыстыру тәсілі дәл осындай."}, "m2_lbl_n": {"en": "Electron density n", "ru": "Плотность электронов n", "kk": "Электрон тығыздығы n"}, "m2_note_slider": {"en": "Slider is log₁₀(n [m⁻³]), range 10¹⁰–10²⁰ m⁻³ (ionosphere to fusion-relevant plasmas).", "ru": "Ползунок задаёт log₁₀(n [м⁻³]), диапазон 10¹⁰–10²⁰ м⁻³ (от ионосферы до термоядерной плазмы).", "kk": "Слайдер log₁₀(n [м⁻³]) мәнін білдіреді, диапазон 10¹⁰–10²⁰ м⁻³ (иономерадан термоядролық плазмаға дейін)."}, "m2_theo_title": {"en": "Theoretical Values", "ru": "Теоретические значения", "kk": "Теориялық мәндер"}, "m2_r_n": {"en": "Density n", "ru": "Плотность n", "kk": "Тығыздық n"}, "m2_r_wp": {"en": "ω_p", "ru": "ω_p", "kk": "ω_p"}, "m2_r_fp": {"en": "f_p", "ru": "f_p", "kk": "f_p"}, "m2_r_Tp": {"en": "T_p (period)", "ru": "T_p (период)", "kk": "T_p (период)"}, "m2_meas_title": {"en": "Your Measurement", "ru": "Ваше измерение", "kk": "Сіздің өлшеуіңіз"}, "m2_m_p1": {"en": "Peak 1 (τ)", "ru": "Пик 1 (τ)", "kk": "1-шың (τ)"}, "m2_m_p2": {"en": "Peak 2 (τ)", "ru": "Пик 2 (τ)", "kk": "2-шың (τ)"}, "m2_m_T": {"en": "Measured T", "ru": "Измеренное T", "kk": "Өлшенген T"}, "m2_m_f": {"en": "Measured f", "ru": "Измеренное f", "kk": "Өлшенген f"}, "m2_m_err": {"en": "Error vs theory", "ru": "Погрешность относительно теории", "kk": "Теориямен салыстырғандағы қателік"}, "m2_canvas_ion": {"en": "ion background", "ru": "ионный фон", "kk": "ион фоны"}, "m2_canvas_electron": {"en": "electron sheet (displaced by ξ)", "ru": "электронный слой (смещён на ξ)", "kk": "электрон қабаты (ξ-ге ығысқан)"}, "m2_canvas_trace": {"en": "ξ(t) — click near a peak to mark it", "ru": "ξ(t) — щёлкните рядом с пиком, чтобы отметить его", "kk": "ξ(t) — белгілеу үшін шыңға жақын жерді басыңыз"}, "m2_canvas_peak": {"en": "peak", "ru": "пик", "kk": "шың"}, "m3_canvas_title": {"en": "Potential around a test charge — drag the probe to inspect φ(r)", "ru": "Потенциал вокруг пробного заряда — перетащите зонд для исследования φ(r)", "kk": "Сынақ зарядының айналасындағы потенциал — φ(r) зерттеу үшін зондты сүйреңіз"}, "m3_leg_screened": {"en": "Screened potential φ(r) (plasma)", "ru": "Экранированный потенциал φ(r) (плазма)", "kk": "Экрандалған потенциал φ(r) (плазма)"}, "m3_leg_bare": {"en": "Bare Coulomb potential (vacuum)", "ru": "Голый кулоновский потенциал (вакуум)", "kk": "Таза Кулон потенциалы (вакуум)"}, "m3_leg_probe": {"en": "Probe / r = λ_D marker", "ru": "Зонд / метка r = λ_D", "kk": "Зонд / r = λ_D белгісі"}, "m3_f1": {"en": "Debye length: λ_D = √( ε₀ k_B T_e / (n e²) )", "ru": "Дебаевская длина: λ_D = √( ε₀ k_B T_e / (n e²) )", "kk": "Дебай ұзындығы: λ_D = √( ε₀ k_B T_e / (n e²) )"}, "m3_f2": {"en": "Screened potential: φ(r) = e / (4π ε₀ r) · exp(−r / λ_D)", "ru": "Экранированный потенциал: φ(r) = e / (4π ε₀ r) · exp(−r / λ_D)", "kk": "Экрандалған потенциал: φ(r) = e / (4π ε₀ r) · exp(−r / λ_D)"}, "m3_note": {"en": "A test charge in a plasma is electrostatically screened by the surrounding mobile charges: beyond a few λ_D the field is exponentially suppressed relative to the vacuum Coulomb field. <b>Your task:</b> drag the probe along the curve, note where the screened curve visibly separates from the bare Coulomb curve, and enter your estimate of λ_D below — then compare it to the exact calculated value. This is the standard way an experimentalist extracts a characteristic decay length from data.", "ru": "Пробный заряд в плазме электростатически экранируется окружающими подвижными зарядами: за пределами нескольких λ_D поле экспоненциально подавляется относительно вакуумного кулоновского поля. <b>Ваша задача:</b> перетащите зонд вдоль кривой, отметьте, где экранированная кривая заметно отделяется от голой кулоновской кривой, и введите свою оценку λ_D ниже — затем сравните её с точным расчётным значением. Это стандартный способ, которым экспериментатор извлекает характерную длину затухания из данных.", "kk": "Плазмадағы сынақ заряды айналасындағы қозғалмалы зарядтармен электростатикалық түрде экрандалады: бірнеше λ_D қашықтығынан кейін өріс вакуумдағы Кулон өрісіне қарағанда экспоненциалды түрде әлсірейді. <b>Тапсырма:</b> зондты қисық бойымен сүйреп, экрандалған қисықтың таза Кулон қисығынан айқын ажырай бастайтын жерін байқаңыз және төменде λ_D-дың өз бағаңызды енгізіңіз — содан кейін оны дәл есептелген мәнмен салыстырыңыз. Бұл — эксперименттеушінің деректен сипаттамалық өшу ұзындығын анықтаудың стандартты тәсілі."}, "m3_lbl_T": {"en": "Electron temperature T_e", "ru": "Температура электронов T_e", "kk": "Электрон температурасы T_e"}, "m3_note_n": {"en": "log₁₀(n [m⁻³]), range 10¹⁰–10²⁰ m⁻³", "ru": "log₁₀(n [м⁻³]), диапазон 10¹⁰–10²⁰ м⁻³", "kk": "log₁₀(n [м⁻³]), диапазон 10¹⁰–10²⁰ м⁻³"}, "m3_note_T": {"en": "log₁₀(T_e [eV]), range 0.1–100 eV", "ru": "log₁₀(T_e [эВ]), диапазон 0,1–100 эВ", "kk": "log₁₀(T_e [эВ]), диапазон 0,1–100 эВ"}, "m3_probe_title": {"en": "Probe Readout", "ru": "Показания зонда", "kk": "Зонд көрсеткіштері"}, "m3_r_lamD": {"en": "λ_D (Debye length)", "ru": "λ_D (дебаевская длина)", "kk": "λ_D (Дебай ұзындығы)"}, "m3_r_r": {"en": "Probe position r", "ru": "Положение зонда r", "kk": "Зонд орны r"}, "m3_r_ratio_rl": {"en": "r / λ_D", "ru": "r / λ_D", "kk": "r / λ_D"}, "m3_r_phis": {"en": "φ_screened(r)", "ru": "φ_экран(r)", "kk": "φ_экран(r)"}, "m3_r_phib": {"en": "φ_bare(r)", "ru": "φ_голый(r)", "kk": "φ_таза(r)"}, "m3_r_ratio": {"en": "ratio screened/bare", "ru": "отношение экран/голый", "kk": "экран/таза қатынасы"}, "m3_meas_title": {"en": "Your Measurement", "ru": "Ваше измерение", "kk": "Сіздің өлшеуіңіз"}, "m3_lbl_guess": {"en": "Your estimate of λ_D (m)", "ru": "Ваша оценка λ_D (м)", "kk": "λ_D-дың сіздің бағаңыз (м)"}, "m3_ph_guess": {"en": "e.g. 1.2e-4", "ru": "напр. 1.2e-4", "kk": "мыс. 1.2e-4"}, "m3_check_enter": {"en": "Enter a positive number", "ru": "Введите положительное число", "kk": "Оң сан енгізіңіз"}, "m3_check_exact": {"en": "Exact λ_D", "ru": "Точное λ_D", "kk": "Дәл λ_D"}, "m3_check_yours": {"en": "Your estimate", "ru": "Ваша оценка", "kk": "Сіздің бағаңыз"}, "m3_check_err": {"en": "Error", "ru": "Погрешность", "kk": "Қателік"}, "m3_axis_r": {"en": "r (m)", "ru": "r (м)", "kk": "r (м)"}, "m3_axis_phi": {"en": "potential φ(r)  [clipped near r→0]", "ru": "потенциал φ(r) [обрезано вблизи r→0]", "kk": "потенциал φ(r) [r→0 маңында кесілген]"}, "lbl_purpose": {"en": "Purpose", "ru": "Цель", "kk": "Мақсат"}, "lbl_objectives": {"en": "Learning Objectives", "ru": "Учебные задачи", "kk": "Оқу міндеттері"}, "lbl_tasks": {"en": "Procedure / Tasks", "ru": "Порядок выполнения / Задания", "kk": "Орындау тәртібі / Тапсырмалар"}, "lbl_problems": {"en": "Calculation Problems", "ru": "Расчётные задачи", "kk": "Есептеу есептері"}, "lbl_show_solution": {"en": "Show solution", "ru": "Показать решение", "kk": "Шешімді көрсету"}, "lbl_given": {"en": "Given:", "ru": "Дано:", "kk": "Берілгені:"}, "a_e1_title": {"en": "Experiment 1 — Charged Particle Motion in Crossed E and B Fields", "ru": "Эксперимент 1 — Движение заряженной частицы в скрещенных полях E и B", "kk": "1-эксперимент — Зарядталған бөлшектің айқас E және B өрістеріндегі қозғалысы"}, "a_e1_purpose": {"en": "To investigate how the trajectory of a charged particle in crossed electric and magnetic fields depends on particle charge, mass, and field strength, and to distinguish the two characteristic motions — cyclotron gyration and E×B drift — both qualitatively and quantitatively.", "ru": "Исследовать, как траектория заряженной частицы в скрещенных электрическом и магнитном полях зависит от заряда частицы, массы и напряжённости полей, и качественно и количественно различить два характерных вида движения — циклотронное вращение и дрейф E×B.", "kk": "Зарядталған бөлшектің айқас электр және магнит өрістеріндегі траекториясы бөлшектің заряды мен массасына және өріс күшіне қалай тәуелді екенін зерттеу, сондай-ақ екі сипатты қозғалысты — циклотрондық айналуды және E×B дрейфін — сапалық және сандық тұрғыда ажырата білу."}, "a_e1_obj": {"en": "<li>Explain the origin of cyclotron (Larmor) gyration from the magnetic part of the Lorentz force.</li><li>Explain why the E×B drift velocity is independent of the particle's charge and mass.</li><li>Calculate ω_c, r_L, T_c, and v_d from given field and particle parameters.</li><li>Predict the qualitative shape of an orbit (circular, cycloidal, or drift-dominated) from the dimensionless ratio α = v_d / v₀ before running the simulation.</li>", "ru": "<li>Объяснить происхождение циклотронного (ларморовского) вращения из магнитной части силы Лоренца.</li><li>Объяснить, почему скорость дрейфа E×B не зависит от заряда и массы частицы.</li><li>Рассчитать ω_c, r_L, T_c и v_d по заданным параметрам поля и частицы.</li><li>Предсказать качественную форму орбиты (окружность, циклоида или дрейф-доминирующая траектория) по безразмерному отношению α = v_d / v₀ ещё до запуска симуляции.</li>", "kk": "<li>Циклотрондық (Лармор) айналудың Лоренц күшінің магниттік бөлігінен туындауын түсіндіру.</li><li>E×B дрейф жылдамдығының бөлшектің зарядына және массасына тәуелсіз болу себебін түсіндіру.</li><li>Берілген өріс және бөлшек параметрлері бойынша ω_c, r_L, T_c және v_d мәндерін есептеу.</li><li>Модельдеуді іске қоспас бұрын, α = v_d / v₀ өлшемсіз қатынасы бойынша орбитаның сапалық пішінін (шеңбер, циклоида немесе дрейф басым траектория) болжау.</li>"}, "a_e1_tasks": {"en": "<li><b>Task 1 — Pure gyration.</b> Select Proton, set E = 0 V/m, B = 0.5 T, v₀ = 1 × 10⁶ m/s. Run the simulation. Confirm the orbit is a closed circle and record ω_c, r_L, T_c from the readout panel.</li><li><b>Task 2 — Predict, then verify.</b> Before touching the E slider, calculate α = (E/B)/v₀ for B = 0.3 T, v₀ = 1 × 10⁴ m/s, and E = 8000 V/m. Predict the orbit shape, then set these exact values and compare with what you see.</li><li><b>Task 3 — Species comparison.</b> Keeping B, E, and v₀ fixed, switch between Electron and Proton. Note that the normalized trajectory shape (α) is identical for both, but r_L, T_c and the direction of gyration differ. Explain why in your lab report.</li><li><b>Task 4 — Data collection.</b> For any configuration, click <i>Play</i>, let the simulation run for at least 3 cyclotron periods, then click <i>Record data point</i> at least 5 times at different τ. Export the CSV and plot x̂ vs ŷ in a spreadsheet to independently confirm the orbit shape.</li>", "ru": "<li><b>Задание 1 — Чистое вращение.</b> Выберите Протон, установите E = 0 В/м, B = 0,5 Тл, v₀ = 1 × 10⁶ м/с. Запустите симуляцию. Убедитесь, что орбита — замкнутая окружность, и запишите ω_c, r_L, T_c из панели показаний.</li><li><b>Задание 2 — Сначала предскажите, потом проверьте.</b> Не трогая ползунок E, рассчитайте α = (E/B)/v₀ для B = 0,3 Тл, v₀ = 1 × 10⁴ м/с и E = 8000 В/м. Предскажите форму орбиты, затем установите именно эти значения и сравните с результатом.</li><li><b>Задание 3 — Сравнение частиц.</b> Оставляя B, E и v₀ неизменными, переключайтесь между Электроном и Протоном. Обратите внимание, что нормированная форма траектории (α) одинакова для обеих частиц, но r_L, T_c и направление вращения различаются. Объясните почему в отчёте.</li><li><b>Задание 4 — Сбор данных.</b> При любой конфигурации нажмите <i>Запуск</i>, дайте симуляции проработать не менее 3 циклотронных периодов, затем не менее 5 раз нажмите <i>Записать точку данных</i> при разных τ. Экспортируйте CSV и постройте график x̂ от ŷ в таблице, чтобы независимо подтвердить форму орбиты.</li>", "kk": "<li><b>1-тапсырма — Таза айналу.</b> Протонды таңдаңыз, E = 0 В/м, B = 0,5 Тл, v₀ = 1 × 10⁶ м/с етіп қойыңыз. Модельдеуді іске қосыңыз. Орбитаның тұйық шеңбер екенін тексеріп, көрсеткіштер тақтасынан ω_c, r_L, T_c мәндерін жазып алыңыз.</li><li><b>2-тапсырма — Алдымен болжа, содан кейін тексер.</b> E слайдерін өзгертпес бұрын, B = 0,3 Тл, v₀ = 1 × 10⁴ м/с және E = 8000 В/м үшін α = (E/B)/v₀ мәнін есептеңіз. Орбита пішінін болжаңыз, содан кейін дәл осы мәндерді қойып, көрген суретпен салыстырыңыз.</li><li><b>3-тапсырма — Бөлшектерді салыстыру.</b> B, E және v₀ мәндерін өзгертпей, Электрон мен Протонды ауыстырып қараңыз. Нормаланған траектория пішіні (α) екеуінде де бірдей болатынына, ал r_L, T_c және айналу бағыты өзгеше болатынына назар аударыңыз. Есеп жұмысыңызда себебін түсіндіріңіз.</li><li><b>4-тапсырма — Деректер жинау.</b> Кез келген конфигурацияда <i>Бастау</i> түймесін басып, модельдеудің кемінде 3 циклотрон периоды бойы жұмыс істеуіне мүмкіндік беріңіз, содан кейін әртүрлі τ мәндерінде кемінде 5 рет <i>Деректі жазу</i> түймесін басыңыз. CSV файлын экспорттап, орбита пішінін тәуелсіз тексеру үшін кестелік редакторда x̂-ты ŷ-ке қарсы графикке салыңыз.</li>"}, "a_e1_problems": {"en": "<div class='problem'><p><b>1.1</b> A proton moves perpendicular to a magnetic field B = 0.8 T with initial speed v₀ = 3 × 10⁵ m/s. Calculate ω_c, f_c, T_c, and r_L. Then set these values in the simulator and confirm the readout panel matches your calculation.</p><p class='given'>Given: q = e = 1.602×10⁻¹⁹ C, m_p = 1.673×10⁻²⁷ kg</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>ω_c = eB/m_p = (1.602×10⁻¹⁹ × 0.8) / 1.673×10⁻²⁷ = 7.66×10⁷ rad/s<br>f_c = ω_c/2π = 1.22×10⁷ Hz ≈ 12.2 MHz<br>T_c = 1/f_c = 8.20×10⁻⁸ s ≈ 82.0 ns<br>r_L = v₀/ω_c = 3×10⁵ / 7.66×10⁷ = 3.91×10⁻³ m ≈ 3.9 mm</div></details></div><div class='problem'><p><b>1.2</b> Repeat problem 1.1 for an electron with the same B and v₀. Compute the ratio r_L(proton) / r_L(electron) and show that it equals m_p/m_e.</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>ω_c(e⁻) = eB/m_e = 1.407×10¹¹ rad/s, f_c = 2.24×10¹⁰ Hz, T_c = 4.47×10⁻¹¹ s<br>r_L(e⁻) = 3×10⁵ / 1.407×10¹¹ = 2.13×10⁻⁶ m ≈ 2.1 μm<br>r_L(p)/r_L(e⁻) = 3.91×10⁻³ / 2.13×10⁻⁶ = 1836 = m_p/m_e ✓</div></details></div><div class='problem'><p><b>1.3</b> For an electron in B = 0.4 T and E = 1200 V/m, find the E×B drift speed v_d. Then find the value of v₀ for which α = v_d/v₀ = 1 exactly (the gyration and drift speeds are equal).</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>v_d = E/B = 1200/0.4 = 3000 m/s<br>α = 1  ⇒  v₀ = v_d = 3000 m/s</div></details></div><div class='problem'><p><b>1.4</b> What magnetic field B is required so that a deuteron has a cyclotron frequency of exactly f_c = 5 MHz? (This is the design calculation used for real cyclotron accelerators.)</p><p class='given'>Given: deuteron mass m_d = 2m_p = 3.345×10⁻²⁷ kg, charge q = +e</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>f_c = eB/(2π m_d)  ⇒  B = 2π f_c m_d / e<br>B = 2π × 5×10⁶ × 3.345×10⁻²⁷ / 1.602×10⁻¹⁹ ≈ 0.656 T</div></details></div>", "ru": "<div class='problem'><p><b>1.1</b> Протон движется перпендикулярно магнитному полю B = 0,8 Тл с начальной скоростью v₀ = 3 × 10⁵ м/с. Рассчитайте ω_c, f_c, T_c и r_L. Затем установите эти значения в симуляторе и убедитесь, что панель показаний совпадает с вашим расчётом.</p><p class='given'>Дано: q = e = 1,602×10⁻¹⁹ Кл, m_p = 1,673×10⁻²⁷ кг</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>ω_c = eB/m_p = (1,602×10⁻¹⁹ × 0,8) / 1,673×10⁻²⁷ = 7,66×10⁷ рад/с<br>f_c = ω_c/2π = 1,22×10⁷ Гц ≈ 12,2 МГц<br>T_c = 1/f_c = 8,20×10⁻⁸ с ≈ 82,0 нс<br>r_L = v₀/ω_c = 3×10⁵ / 7,66×10⁷ = 3,91×10⁻³ м ≈ 3,9 мм</div></details></div><div class='problem'><p><b>1.2</b> Повторите задачу 1.1 для электрона с теми же B и v₀. Вычислите отношение r_L(протон) / r_L(электрон) и покажите, что оно равно m_p/m_e.</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>ω_c(e⁻) = eB/m_e = 1,407×10¹¹ рад/с, f_c = 2,24×10¹⁰ Гц, T_c = 4,47×10⁻¹¹ с<br>r_L(e⁻) = 3×10⁵ / 1,407×10¹¹ = 2,13×10⁻⁶ м ≈ 2,1 мкм<br>r_L(p)/r_L(e⁻) = 3,91×10⁻³ / 2,13×10⁻⁶ = 1836 = m_p/m_e ✓</div></details></div><div class='problem'><p><b>1.3</b> Для электрона в поле B = 0,4 Тл и E = 1200 В/м найдите скорость дрейфа E×B — v_d. Затем найдите значение v₀, при котором α = v_d/v₀ = 1 точно (скорости вращения и дрейфа равны).</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>v_d = E/B = 1200/0,4 = 3000 м/с<br>α = 1  ⇒  v₀ = v_d = 3000 м/с</div></details></div><div class='problem'><p><b>1.4</b> Какое магнитное поле B требуется, чтобы циклотронная частота дейтрона составляла ровно f_c = 5 МГц? (Именно такой расчёт используется при проектировании реальных циклотронных ускорителей.)</p><p class='given'>Дано: масса дейтрона m_d = 2m_p = 3,345×10⁻²⁷ кг, заряд q = +e</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>f_c = eB/(2π m_d)  ⇒  B = 2π f_c m_d / e<br>B = 2π × 5×10⁶ × 3,345×10⁻²⁷ / 1,602×10⁻¹⁹ ≈ 0,656 Тл</div></details></div>", "kk": "<div class='problem'><p><b>1.1</b> Протон B = 0,8 Тл магнит өрісіне перпендикуляр бағытта v₀ = 3 × 10⁵ м/с бастапқы жылдамдықпен қозғалады. ω_c, f_c, T_c және r_L мәндерін есептеңіз. Содан кейін осы мәндерді модельдеушіде қойып, көрсеткіштер тақтасының есебіңізбен сәйкес келетінін тексеріңіз.</p><p class='given'>Берілгені: q = e = 1,602×10⁻¹⁹ Кл, m_p = 1,673×10⁻²⁷ кг</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>ω_c = eB/m_p = (1,602×10⁻¹⁹ × 0,8) / 1,673×10⁻²⁷ = 7,66×10⁷ рад/с<br>f_c = ω_c/2π = 1,22×10⁷ Гц ≈ 12,2 МГц<br>T_c = 1/f_c = 8,20×10⁻⁸ с ≈ 82,0 нс<br>r_L = v₀/ω_c = 3×10⁵ / 7,66×10⁷ = 3,91×10⁻³ м ≈ 3,9 мм</div></details></div><div class='problem'><p><b>1.2</b> 1.1-есепті сол B және v₀ мәндерімен электрон үшін қайталаңыз. r_L(протон) / r_L(электрон) қатынасын есептеп, оның m_p/m_e-ге тең екенін көрсетіңіз.</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>ω_c(e⁻) = eB/m_e = 1,407×10¹¹ рад/с, f_c = 2,24×10¹⁰ Гц, T_c = 4,47×10⁻¹¹ с<br>r_L(e⁻) = 3×10⁵ / 1,407×10¹¹ = 2,13×10⁻⁶ м ≈ 2,1 мкм<br>r_L(p)/r_L(e⁻) = 3,91×10⁻³ / 2,13×10⁻⁶ = 1836 = m_p/m_e ✓</div></details></div><div class='problem'><p><b>1.3</b> B = 0,4 Тл және E = 1200 В/м өрістеріндегі электрон үшін E×B дрейф жылдамдығы v_d-ды табыңыз. Содан кейін α = v_d/v₀ = 1 дәл теңдігі орындалатын v₀ мәнін табыңыз (айналу және дрейф жылдамдықтары тең болғанда).</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>v_d = E/B = 1200/0,4 = 3000 м/с<br>α = 1  ⇒  v₀ = v_d = 3000 м/с</div></details></div><div class='problem'><p><b>1.4</b> Дейтронның циклотрондық жиілігі дәл f_c = 5 МГц болуы үшін қандай B магнит өрісі қажет? (Бұл нақты циклотрон үдеткіштерін жобалауда қолданылатын есептеу.)</p><p class='given'>Берілгені: дейтрон массасы m_d = 2m_p = 3,345×10⁻²⁷ кг, заряды q = +e</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>f_c = eB/(2π m_d)  ⇒  B = 2π f_c m_d / e<br>B = 2π × 5×10⁶ × 3,345×10⁻²⁷ / 1,602×10⁻¹⁹ ≈ 0,656 Тл</div></details></div>"}, "a_e2_title": {"en": "Experiment 2 — Plasma (Langmuir) Oscillations", "ru": "Эксперимент 2 — Плазменные (ленгмюровские) колебания", "kk": "2-эксперимент — Плазмалық (Ленгмюр) тербелістері"}, "a_e2_purpose": {"en": "To measure the natural oscillation frequency of a displaced electron fluid directly from a simulated signal, and to verify the plasma-frequency scaling law f_p ∝ √n against the theoretical prediction — the same measurement-vs-theory workflow used with a real Langmuir probe or interferometer.", "ru": "Измерить собственную частоту колебаний смещённой электронной жидкости непосредственно из смоделированного сигнала и проверить закон масштабирования плазменной частоты f_p ∝ √n относительно теоретического предсказания — тот же подход «измерение против теории», что используется с реальным зондом Ленгмюра или интерферометром.", "kk": "Ығысқан электрон сұйықтығының меншікті тербеліс жиілігін модельденген сигналдан тікелей өлшеу және плазмалық жиіліктің f_p ∝ √n масштабтау заңын теориялық болжаммен салыстырып тексеру — бұл нақты Ленгмюр зонды немесе интерферометрмен қолданылатын «өлшеу мен теорияны салыстыру» тәсілі дәл осындай."}, "a_e2_obj": {"en": "<li>Explain (qualitatively) why electron displacement in a plasma leads to a restoring force and oscillation, and identify why ions do not participate in the fast oscillation.</li><li>Extract a period from a time-domain signal by locating repeated features (peaks) — a core experimental-physics data-analysis skill.</li><li>Quantify measurement error as a percentage and discuss its possible sources (reading precision, sampling, human click accuracy).</li><li>Connect plasma frequency to a real physical phenomenon: radio-wave reflection by the ionosphere.</li>", "ru": "<li>Объяснить (качественно), почему смещение электронов в плазме приводит к возвращающей силе и колебаниям, и указать, почему ионы не участвуют в этом быстром колебании.</li><li>Извлечь период из временного сигнала, находя повторяющиеся особенности (пики) — базовый навык анализа данных в экспериментальной физике.</li><li>Выразить погрешность измерения в процентах и обсудить её возможные источники (точность считывания, дискретизация, точность щелчка мыши).</li><li>Связать плазменную частоту с реальным физическим явлением: отражением радиоволн ионосферой.</li>", "kk": "<li>Плазмадағы электрондардың ығысуы неге қайтарушы күш пен тербеліске әкелетінін (сапалық түрде) түсіндіру және иондардың неге бұл жылдам тербеліске қатыспайтынын анықтау.</li><li>Уақыттық сигналдан қайталанатын ерекшеліктерді (шыңдарды) тауып, период мәнін алу — эксперименттік физикадағы негізгі деректерді талдау дағдысы.</li><li>Өлшеу қателігін пайызбен өрнектеп, оның мүмкін көздерін (оқу дәлдігі, дискреттеу, тінтуірмен басу дәлдігі) талқылау.</li><li>Плазмалық жиілікті нақты физикалық құбылыспен — радиотолқындардың иономерадан шағылуымен — байланыстыру.</li>"}, "a_e2_tasks": {"en": "<li><b>Task 1.</b> Set n = 10¹⁷ m⁻³. Record the theoretical f_p from the readout panel.</li><li><b>Task 2 — Measurement.</b> Click <i>Play</i>, then click on two adjacent peaks of the trace to mark them. Read off the measured T and f, and record the percentage error relative to theory.</li><li><b>Task 3 — Scaling law.</b> Repeat the measurement for n = 10¹⁵, 10¹⁷, and 10¹⁹ m⁻³. Tabulate f_p (theoretical) for each and confirm that increasing density by a factor of 100 increases f_p by a factor of 10 (since f_p ∝ √n).</li><li><b>Task 4 — Ionosphere connection.</b> Set n = 10¹² m⁻³ (typical ionospheric F-layer electron density) and record f_p. Compare this to the known fact that AM/shortwave radio waves below this frequency are reflected by the ionosphere rather than transmitted into space.</li>", "ru": "<li><b>Задание 1.</b> Установите n = 10¹⁷ м⁻³. Запишите теоретическое f_p из панели показаний.</li><li><b>Задание 2 — Измерение.</b> Нажмите <i>Запуск</i>, затем щёлкните по двум соседним пикам осциллограммы, чтобы отметить их. Считайте измеренные T и f и запишите погрешность в процентах относительно теории.</li><li><b>Задание 3 — Закон масштабирования.</b> Повторите измерение для n = 10¹⁵, 10¹⁷ и 10¹⁹ м⁻³. Составьте таблицу теоретических f_p и убедитесь, что увеличение плотности в 100 раз увеличивает f_p в 10 раз (поскольку f_p ∝ √n).</li><li><b>Задание 4 — Связь с ионосферой.</b> Установите n = 10¹² м⁻³ (типичная плотность электронов слоя F ионосферы) и запишите f_p. Сравните это со известным фактом, что радиоволны АМ/коротковолнового диапазона ниже этой частоты отражаются ионосферой, а не уходят в космос.</li>", "kk": "<li><b>1-тапсырма.</b> n = 10¹⁷ м⁻³ мәнін қойыңыз. Көрсеткіштер тақтасынан теориялық f_p мәнін жазып алыңыз.</li><li><b>2-тапсырма — Өлшеу.</b> <i>Бастау</i> түймесін басыңыз, содан кейін трассадағы екі көрші шыңды белгілеу үшін оларды басыңыз. Өлшенген T және f мәндерін оқып, теориямен салыстырғандағы пайыздық қателікті жазып алыңыз.</li><li><b>3-тапсырма — Масштабтау заңы.</b> Өлшеуді n = 10¹⁵, 10¹⁷ және 10¹⁹ м⁻³ үшін қайталаңыз. Әрқайсысы үшін теориялық f_p мәнін кестеге түсіріп, тығыздықты 100 есе арттырғанда f_p 10 есе артатынын тексеріңіз (себебі f_p ∝ √n).</li><li><b>4-тапсырма — Иономерамен байланыс.</b> n = 10¹² м⁻³ (иономераның F-қабатына тән электрон тығыздығы) мәнін қойып, f_p мәнін жазып алыңыз. Мұны осы жиіліктен төмен АМ/қысқа толқынды радиотолқындардың ғарышқа өтпей, иономерадан шағылатыны туралы белгілі фактімен салыстырыңыз.</li>"}, "a_e2_problems": {"en": "<div class='problem'><p><b>2.1</b> Calculate the plasma frequency f_p for an electron density n = 1×10¹⁸ m⁻³ (typical of a laboratory glow-discharge plasma).</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>ω_p = √(ne²/ε₀m_e) = √(10¹⁸ × (1.602×10⁻¹⁹)² / (8.854×10⁻¹² × 9.109×10⁻³¹)) = 5.64×10¹⁰ rad/s<br>f_p = ω_p/2π = 8.98×10⁹ Hz ≈ 8.98 GHz</div></details></div><div class='problem'><p><b>2.2 (unit conversion)</b> A textbook quotes a plasma density as n = 1×10¹² cm⁻³. Convert to m⁻³ and confirm it gives the same f_p as problem 2.1.</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>1 cm⁻³ = 10⁶ m⁻³  ⇒  n = 1×10¹² × 10⁶ = 1×10¹⁸ m⁻³ — identical to 2.1, f_p ≈ 8.98 GHz ✓</div></details></div><div class='problem'><p><b>2.3</b> The ionospheric F-layer has n ≈ 1×10¹² m⁻³. Calculate f_p and explain, in one sentence, its significance for radio communication.</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>f_p = 8.98×√(10¹²) ≈ 8.98×10⁶ Hz ≈ 8.98 MHz<br>Radio waves with frequency below f_p are reflected by the ionosphere; waves above f_p (e.g. VHF/FM, satellite links) pass through it.</div></details></div><div class='problem'><p><b>2.4 (reverse problem)</b> A diagnostic measures a plasma oscillation at f_p = 2.8 GHz. What is the electron density n?</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>n = (2π f_p)² ε₀ m_e / e² = (2π×2.8×10⁹)² × 8.854×10⁻¹² × 9.109×10⁻³¹ / (1.602×10⁻¹⁹)²<br>n ≈ 9.73×10¹⁶ m⁻³</div></details></div>", "ru": "<div class='problem'><p><b>2.1</b> Рассчитайте плазменную частоту f_p для плотности электронов n = 1×10¹⁸ м⁻³ (типично для лабораторной тлеющей разрядной плазмы).</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>ω_p = √(ne²/ε₀m_e) = √(10¹⁸ × (1,602×10⁻¹⁹)² / (8,854×10⁻¹² × 9,109×10⁻³¹)) = 5,64×10¹⁰ рад/с<br>f_p = ω_p/2π = 8,98×10⁹ Гц ≈ 8,98 ГГц</div></details></div><div class='problem'><p><b>2.2 (перевод единиц)</b> В учебнике плотность плазмы указана как n = 1×10¹² см⁻³. Переведите в м⁻³ и убедитесь, что f_p совпадает со значением из задачи 2.1.</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>1 см⁻³ = 10⁶ м⁻³  ⇒  n = 1×10¹² × 10⁶ = 1×10¹⁸ м⁻³ — совпадает с 2.1, f_p ≈ 8,98 ГГц ✓</div></details></div><div class='problem'><p><b>2.3</b> Слой F ионосферы имеет n ≈ 1×10¹² м⁻³. Рассчитайте f_p и объясните одним предложением его значение для радиосвязи.</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>f_p = 8,98×√(10¹²) ≈ 8,98×10⁶ Гц ≈ 8,98 МГц<br>Радиоволны с частотой ниже f_p отражаются ионосферой; волны выше f_p (например, УКВ/ЧМ, спутниковая связь) проходят сквозь неё.</div></details></div><div class='problem'><p><b>2.4 (обратная задача)</b> Диагностика фиксирует плазменное колебание с f_p = 2,8 ГГц. Какова плотность электронов n?</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>n = (2π f_p)² ε₀ m_e / e² = (2π×2,8×10⁹)² × 8,854×10⁻¹² × 9,109×10⁻³¹ / (1,602×10⁻¹⁹)²<br>n ≈ 9,73×10¹⁶ м⁻³</div></details></div>", "kk": "<div class='problem'><p><b>2.1</b> n = 1×10¹⁸ м⁻³ электрон тығыздығы үшін плазмалық жиілік f_p мәнін есептеңіз (зертханалық жылтыр разряд плазмасына тән мән).</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>ω_p = √(ne²/ε₀m_e) = √(10¹⁸ × (1,602×10⁻¹⁹)² / (8,854×10⁻¹² × 9,109×10⁻³¹)) = 5,64×10¹⁰ рад/с<br>f_p = ω_p/2π = 8,98×10⁹ Гц ≈ 8,98 ГГц</div></details></div><div class='problem'><p><b>2.2 (бірлікті түрлендіру)</b> Оқулықта плазма тығыздығы n = 1×10¹² см⁻³ деп берілген. Оны м⁻³-ке түрлендіріп, 2.1-есептегі f_p мәнімен бірдей болатынын тексеріңіз.</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>1 см⁻³ = 10⁶ м⁻³  ⇒  n = 1×10¹² × 10⁶ = 1×10¹⁸ м⁻³ — 2.1-мен бірдей, f_p ≈ 8,98 ГГц ✓</div></details></div><div class='problem'><p><b>2.3</b> Иономераның F-қабатында n ≈ 1×10¹² м⁻³. f_p мәнін есептеп, оның радиобайланыс үшін маңызын бір сөйлеммен түсіндіріңіз.</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>f_p = 8,98×√(10¹²) ≈ 8,98×10⁶ Гц ≈ 8,98 МГц<br>f_p мәнінен төмен жиіліктегі радиотолқындар иономерадан шағылады; f_p мәнінен жоғары толқындар (мысалы, ВЖЖ/FM, серіктік байланыс) одан өтіп кетеді.</div></details></div><div class='problem'><p><b>2.4 (кері есеп)</b> Диагностика f_p = 2,8 ГГц плазмалық тербелісін тіркеді. Электрон тығыздығы n қандай?</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>n = (2π f_p)² ε₀ m_e / e² = (2π×2,8×10⁹)² × 8,854×10⁻¹² × 9,109×10⁻³¹ / (1,602×10⁻¹⁹)²<br>n ≈ 9,73×10¹⁶ м⁻³</div></details></div>"}, "a_e3_title": {"en": "Experiment 3 — Debye Shielding", "ru": "Эксперимент 3 — Дебаевское экранирование", "kk": "3-эксперимент — Дебай экрандалуы"}, "a_e3_purpose": {"en": "To determine the Debye length — the characteristic distance over which a plasma electrostatically screens a charge — by graphical estimation from simulated potential data, and to evaluate the \"plasma approximation\" validity criterion (many particles per Debye sphere).", "ru": "Определить дебаевскую длину — характерное расстояние, на котором плазма электростатически экранирует заряд, — путём графической оценки по смоделированным данным потенциала, и оценить критерий применимости «плазменного приближения» (много частиц в дебаевской сфере).", "kk": "Плазманың зарядты электростатикалық түрде экрандайтын сипаттамалық қашықтығы — Дебай ұзындығын — модельденген потенциал деректерінен графикалық түрде бағалау арқылы анықтау, сондай-ақ «плазмалық жуықтаудың» дұрыстық өлшемін (Дебай сферасындағы бөлшектер саны көп болуы) бағалау."}, "a_e3_obj": {"en": "<li>Explain physically why mobile charges screen an electric field in a plasma.</li><li>Estimate a characteristic decay length directly from a graph, and quantify the estimation error.</li><li>Calculate λ_D from n and T_e, and vice versa.</li><li>Compute the number of particles in a Debye sphere, N_D, and explain why N_D ≫ 1 is required for collective (fluid-like) plasma behavior to hold.</li>", "ru": "<li>Объяснить физически, почему подвижные заряды экранируют электрическое поле в плазме.</li><li>Оценить характерную длину затухания непосредственно по графику и выразить погрешность оценки количественно.</li><li>Рассчитать λ_D по n и T_e и наоборот.</li><li>Вычислить число частиц в дебаевской сфере N_D и объяснить, почему условие N_D ≫ 1 необходимо для коллективного (гидродинамического) поведения плазмы.</li>", "kk": "<li>Плазмадағы қозғалмалы зарядтардың электр өрісін неге экрандайтынын физикалық тұрғыда түсіндіру.</li><li>Сипаттамалық өшу ұзындығын графиктен тікелей бағалау және бағалау қателігін сандық түрде өрнектеу.</li><li>λ_D мәнін n және T_e арқылы, және керісінше есептеу.</li><li>Дебай сферасындағы бөлшектер санын N_D есептеу және плазманың ұжымдық (сұйықтық тәрізді) қасиеті сақталуы үшін N_D ≫ 1 шартының неге қажет екенін түсіндіру.</li>"}, "a_e3_tasks": {"en": "<li><b>Task 1.</b> Set n = 10¹⁶ m⁻³, T_e = 10 eV. Drag the probe until the screened (violet) curve visibly drops below the bare Coulomb (cyan) curve, and enter your visual estimate of λ_D. Click <i>Check estimate</i> and record your percentage error.</li><li><b>Task 2.</b> Increase n by two orders of magnitude (keep T_e fixed). Predict whether λ_D increases or decreases, then verify from the readout panel.</li><li><b>Task 3.</b> Increase T_e by one order of magnitude (keep n fixed). Predict the effect on λ_D and verify.</li><li><b>Task 4 — Plasma criterion.</b> For each configuration above, calculate N_D = (4/3)π λ_D³ n by hand and confirm N_D ≫ 1, i.e. the plasma (fluid) approximation is valid.</li>", "ru": "<li><b>Задание 1.</b> Установите n = 10¹⁶ м⁻³, T_e = 10 эВ. Перетаскивайте зонд, пока экранированная (фиолетовая) кривая заметно не опустится ниже голой кулоновской (голубой) кривой, и введите свою визуальную оценку λ_D. Нажмите <i>Проверить оценку</i> и запишите процент погрешности.</li><li><b>Задание 2.</b> Увеличьте n на два порядка (T_e не меняйте). Предскажите, увеличится или уменьшится λ_D, затем проверьте по панели показаний.</li><li><b>Задание 3.</b> Увеличьте T_e на один порядок (n не меняйте). Предскажите влияние на λ_D и проверьте.</li><li><b>Задание 4 — Критерий плазмы.</b> Для каждой конфигурации выше рассчитайте вручную N_D = (4/3)π λ_D³ n и убедитесь, что N_D ≫ 1, то есть плазменное (гидродинамическое) приближение справедливо.</li>", "kk": "<li><b>1-тапсырма.</b> n = 10¹⁶ м⁻³, T_e = 10 эВ мәндерін қойыңыз. Экрандалған (күлгін) қисық таза Кулон (көгілдір) қисығынан айқын төмен түскенше зондты сүйреп, λ_D-дың көзбен бағаланған мәнін енгізіңіз. <i>Бағаны тексеру</i> түймесін басып, пайыздық қателікті жазып алыңыз.</li><li><b>2-тапсырма.</b> n мәнін екі ретке арттырыңыз (T_e өзгертпеңіз). λ_D артады ма, кемиді ме, соны болжаңыз, содан кейін көрсеткіштер тақтасынан тексеріңіз.</li><li><b>3-тапсырма.</b> T_e мәнін бір ретке арттырыңыз (n өзгертпеңіз). λ_D-ге әсерін болжап, тексеріңіз.</li><li><b>4-тапсырма — Плазмалық өлшем.</b> Жоғарыдағы әр конфигурация үшін N_D = (4/3)π λ_D³ n мәнін қолмен есептеп, N_D ≫ 1 шартының орындалатынын, яғни плазмалық (сұйықтық) жуықтаудың дұрыс екенін тексеріңіз.</li>"}, "a_e3_problems": {"en": "<div class='problem'><p><b>3.1</b> Calculate λ_D for n = 1×10¹⁹ m⁻³, T_e = 2 eV (typical of a laboratory fusion-relevant edge plasma).</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>λ_D = √(ε₀ k_BT_e / (n e²)) = √(8.854×10⁻¹² × 2×1.602×10⁻¹⁹ / (10¹⁹ × (1.602×10⁻¹⁹)²))<br>λ_D ≈ 3.32×10⁻⁶ m ≈ 3.3 μm</div></details></div><div class='problem'><p><b>3.2</b> Calculate λ_D for n = 1×10¹² m⁻³, T_e = 0.1 eV (typical of the ionosphere). Compare the length scale to problem 3.1.</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>λ_D ≈ 2.35×10⁻³ m ≈ 2.35 mm — about 700× larger than in problem 3.1. Since λ_D ∝ √(T_e/n), the much lower density here increases λ_D far more than the lower temperature decreases it.</div></details></div><div class='problem'><p><b>3.3 (reverse problem)</b> An experiment measures λ_D = 50 μm at T_e = 5 eV. What is the electron density n?</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>n = ε₀ k_BT_e / (e² λ_D²) = 8.854×10⁻¹² × 5×1.602×10⁻¹⁹ / ((1.602×10⁻¹⁹)² × (50×10⁻⁶)²)<br>n ≈ 1.11×10¹⁷ m⁻³</div></details></div><div class='problem'><p><b>3.4</b> For the plasma in problem 3.1 (n = 10¹⁹ m⁻³, λ_D ≈ 3.32×10⁻⁶ m), compute the number of electrons inside a sphere of radius λ_D, N_D, and state whether the plasma approximation (N_D ≫ 1) holds.</p><details class='answer'><summary>Show solution</summary><div class='solution mono'>N_D = (4/3)π λ_D³ n = (4/3)π × (3.32×10⁻⁶)³ × 10¹⁹ ≈ 1.5×10³<br>N_D ≈ 1500 ≫ 1 → the plasma (collective, fluid) approximation is well satisfied.</div></details></div>", "ru": "<div class='problem'><p><b>3.1</b> Рассчитайте λ_D для n = 1×10¹⁹ м⁻³, T_e = 2 эВ (типично для краевой плазмы, актуальной для лабораторного термоядерного синтеза).</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>λ_D = √(ε₀ k_BT_e / (n e²)) = √(8,854×10⁻¹² × 2×1,602×10⁻¹⁹ / (10¹⁹ × (1,602×10⁻¹⁹)²))<br>λ_D ≈ 3,32×10⁻⁶ м ≈ 3,3 мкм</div></details></div><div class='problem'><p><b>3.2</b> Рассчитайте λ_D для n = 1×10¹² м⁻³, T_e = 0,1 эВ (типично для ионосферы). Сравните масштаб длины с задачей 3.1.</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>λ_D ≈ 2,35×10⁻³ м ≈ 2,35 мм — примерно в 700 раз больше, чем в задаче 3.1. Поскольку λ_D ∝ √(T_e/n), гораздо более низкая плотность здесь увеличивает λ_D сильнее, чем более низкая температура его уменьшает.</div></details></div><div class='problem'><p><b>3.3 (обратная задача)</b> Эксперимент измеряет λ_D = 50 мкм при T_e = 5 эВ. Какова плотность электронов n?</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>n = ε₀ k_BT_e / (e² λ_D²) = 8,854×10⁻¹² × 5×1,602×10⁻¹⁹ / ((1,602×10⁻¹⁹)² × (50×10⁻⁶)²)<br>n ≈ 1,11×10¹⁷ м⁻³</div></details></div><div class='problem'><p><b>3.4</b> Для плазмы из задачи 3.1 (n = 10¹⁹ м⁻³, λ_D ≈ 3,32×10⁻⁶ м) вычислите число электронов внутри сферы радиуса λ_D — N_D, и укажите, выполняется ли плазменное приближение (N_D ≫ 1).</p><details class='answer'><summary>Показать решение</summary><div class='solution mono'>N_D = (4/3)π λ_D³ n = (4/3)π × (3,32×10⁻⁶)³ × 10¹⁹ ≈ 1,5×10³<br>N_D ≈ 1500 ≫ 1 → плазменное (коллективное, гидродинамическое) приближение хорошо выполняется.</div></details></div>", "kk": "<div class='problem'><p><b>3.1</b> n = 1×10¹⁹ м⁻³, T_e = 2 эВ үшін λ_D мәнін есептеңіз (зертханалық термоядролық синтезге қатысты шеткі плазмаға тән мән).</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>λ_D = √(ε₀ k_BT_e / (n e²)) = √(8,854×10⁻¹² × 2×1,602×10⁻¹⁹ / (10¹⁹ × (1,602×10⁻¹⁹)²))<br>λ_D ≈ 3,32×10⁻⁶ м ≈ 3,3 мкм</div></details></div><div class='problem'><p><b>3.2</b> n = 1×10¹² м⁻³, T_e = 0,1 эВ үшін λ_D мәнін есептеңіз (иономераға тән мән). Ұзындық масштабын 3.1-есеппен салыстырыңыз.</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>λ_D ≈ 2,35×10⁻³ м ≈ 2,35 мм — 3.1-есептегіден шамамен 700 есе үлкен. λ_D ∝ √(T_e/n) болғандықтан, мұндағы әлдеқайда төмен тығыздық λ_D-ды төмен температураның азайтуынан әлдеқайда көп арттырады.</div></details></div><div class='problem'><p><b>3.3 (кері есеп)</b> Эксперимент T_e = 5 эВ кезінде λ_D = 50 мкм өлшеді. Электрон тығыздығы n қандай?</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>n = ε₀ k_BT_e / (e² λ_D²) = 8,854×10⁻¹² × 5×1,602×10⁻¹⁹ / ((1,602×10⁻¹⁹)² × (50×10⁻⁶)²)<br>n ≈ 1,11×10¹⁷ м⁻³</div></details></div><div class='problem'><p><b>3.4</b> 3.1-есептегі плазма үшін (n = 10¹⁹ м⁻³, λ_D ≈ 3,32×10⁻⁶ м) радиусы λ_D сферасының ішіндегі электрондар санын N_D есептеп, плазмалық жуықтаудың (N_D ≫ 1) орындалатынын анықтаңыз.</p><details class='answer'><summary>Шешімді көрсету</summary><div class='solution mono'>N_D = (4/3)π λ_D³ n = (4/3)π × (3,32×10⁻⁶)³ × 10¹⁹ ≈ 1,5×10³<br>N_D ≈ 1500 ≫ 1 → плазмалық (ұжымдық, сұйықтық) жуықтау жақсы орындалады.</div></details></div>"}, "a_discuss_title": {"en": "Suggested Discussion / Report Questions", "ru": "Вопросы для обсуждения / отчёта", "kk": "Талқылауға/есепке арналған ұсынылатын сұрақтар"}, "a_discuss": {"en": "<li>How does normalizing the E×B trajectory to r_L and T_c allow a single simulation to represent particles of vastly different real mass and charge? What are the limits of this normalization?</li><li>Why is the plasma oscillation in Experiment 2 restricted to the electrons, with the ions treated as a fixed background? Under what conditions would this assumption break down?</li><li>Relate the Debye length in Experiment 3 to the E×B and plasma-oscillation experiments: what would happen physically to a test charge's field if N_D were not ≫ 1?</li><li>Propose one additional measurement you could add to each experiment to strengthen the comparison between simulated data and theoretical prediction.</li>", "ru": "<li>Как нормировка траектории E×B к r_L и T_c позволяет одной симуляции представлять частицы с сильно различающимися реальными массой и зарядом? Каковы пределы применимости такой нормировки?</li><li>Почему плазменное колебание в Эксперименте 2 ограничено только электронами, а ионы рассматриваются как неподвижный фон? При каких условиях это допущение нарушится?</li><li>Свяжите дебаевскую длину из Эксперимента 3 с экспериментами E×B и плазменных колебаний: что физически произошло бы с полем пробного заряда, если бы N_D не было ≫ 1?</li><li>Предложите одно дополнительное измерение, которое можно добавить к каждому эксперименту, чтобы усилить сравнение смоделированных данных с теоретическим предсказанием.</li>", "kk": "<li>E×B траекториясын r_L мен T_c-ге нормалау неге бір ғана модельдеудің нақты массасы мен заряды әртүрлі бөлшектерді бейнелеуіне мүмкіндік береді? Бұл нормалаудың шектері қандай?</li><li>2-экспериментте плазмалық тербеліс неге тек электрондармен шектеледі, ал иондар тыныш фон ретінде қарастырылады? Бұл болжам қандай жағдайда бұзылады?</li><li>3-эксперименттегі Дебай ұзындығын E×B және плазмалық тербеліс эксперименттерімен байланыстырыңыз: N_D ≫ 1 болмаса, сынақ зарядының өрісіне физикалық тұрғыда не болар еді?</li><li>Модельденген деректер мен теориялық болжамды салыстыруды күшейту үшін әр экспериментке қосуға болатын бір қосымша өлшеуді ұсыныңыз.</li>"}};
+let LANG = "en";
+function t(key){
+  if (I18N[key] && I18N[key][LANG] !== undefined) return I18N[key][LANG];
+  if (I18N[key] && I18N[key].en !== undefined) return I18N[key].en;
+  return key;
+}
+const RERENDERS = [];
+function applyStaticTranslations(){
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if (key) el.textContent = t(key);
+  });
+  document.querySelectorAll("[data-i18n-html]").forEach(function(el){
+    var key = el.getAttribute("data-i18n-html");
+    if (key) el.innerHTML = t(key);
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(el){
+    var key = el.getAttribute("data-i18n-ph");
+    if (key) el.placeholder = t(key);
+  });
+  document.getElementById("pageTitle").textContent = t("h_title");
+  document.documentElement.lang = LANG;
+  document.querySelectorAll(".langbar .langbtn").forEach(function(a){
+    a.classList.toggle("active", a.getAttribute("data-lang") === LANG);
+  });
+}
+function setLanguage(lang){
+  if (!I18N.h_title || !I18N.h_title[lang]) lang = "en";
+  LANG = lang;
+  try { localStorage.setItem("plasmalab_lang", lang); } catch(e){}
+  applyStaticTranslations();
+  RERENDERS.forEach(function(fn){ try{ fn(); }catch(e){} });
+}
+window.addEventListener("hashchange", function(){
+  var m = location.hash.match(/lang=([a-z]+)/);
+  if (m && I18N.h_title && I18N.h_title[m[1]]) setLanguage(m[1]);
+});
+document.querySelectorAll(".langbar .langbtn").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    var lang = btn.getAttribute("data-lang");
+    try {
+      if (window.history && window.history.pushState) window.history.pushState(null, "", "#lang=" + lang);
+      else location.hash = "lang=" + lang;
+    } catch(e){}
+    setLanguage(lang);
+  });
+});
+
+/* ---------- tabs ---------- */
+document.querySelectorAll(".tab-btn").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+    document.querySelectorAll(".module").forEach(function(m){ m.classList.remove("active"); });
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.target).classList.add("active");
+  });
+});
+
+/* ---------- shared constants ---------- */
+const E_CHARGE = 1.602176634e-19;
+const M_E = 9.1093837015e-31;
+const M_P = 1.67262192369e-27;
+const EPS0 = 8.8541878128e-12;
+
+/* ---------- helpers ---------- */
+function fmt(x, sig){
+  if (x === 0) return "0";
+  if (!isFinite(x)) return "\u2014";
+  sig = sig || 3;
+  const ax = Math.abs(x);
+  if (ax !== 0 && (ax < 1e-3 || ax >= 1e5)) return x.toExponential(sig-1);
+  return Number(x.toPrecision(sig)).toString();
+}
+function formatForInput(x){
+  if (!isFinite(x)) return "0";
+  const ax = Math.abs(x);
+  if (ax !== 0 && (ax < 1e-3 || ax >= 1e6)) return x.toExponential(3);
+  return (Math.round(x*1e6)/1e6).toString();
+}
+function setupHiDPI(canvas){
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.getAttribute("width");
+  const h = canvas.getAttribute("height");
+  if (!canvas._hidpi){
+    canvas.width = w * ratio;
+    canvas.height = h * ratio;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    canvas._hidpi = true;
+    canvas._logicalW = w; canvas._logicalH = h;
+  }
+  return canvas.getContext("2d");
+}
+function downloadCSV(filename, rows){
+  const csv = rows.map(function(r){ return r.join(","); }).join("\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+/* generic slider <-> number-input linker, with clamping so typed values can never desync or crash the sim */
+function linkSliderNumber(range, num, opts){
+  opts = opts || {};
+  const toDisp = opts.toDisplay || function(v){ return v; };
+  const fromDisp = opts.fromDisplay || function(v){ return v; };
+  function syncFromRange(){ num.value = formatForInput(toDisp(parseFloat(range.value))); }
+  function syncFromNumber(){
+    let d = parseFloat(num.value);
+    if (isNaN(d)){ syncFromRange(); return; }
+    let rv = fromDisp(d);
+    const rmin = parseFloat(range.min), rmax = parseFloat(range.max);
+    rv = Math.min(rmax, Math.max(rmin, rv));
+    range.value = rv;
+    range.dispatchEvent(new Event("input", {bubbles:true}));
+    syncFromRange();
+  }
+  range.addEventListener("input", syncFromRange);
+  num.addEventListener("change", syncFromNumber);
+  num.addEventListener("keydown", function(e){ if (e.key === "Enter"){ syncFromNumber(); num.blur(); } });
+  syncFromRange();
+}
+
+/* =========================================================
+   MODULE 1 - Charged particle in crossed E and B fields
+   ========================================================= */
+(function(){
+  const canvas = document.getElementById("cvExb");
+  const ctx = setupHiDPI(canvas);
+  const W = canvas._logicalW, H = canvas._logicalH;
+
+  const particles = {
+    electron:  {q:-E_CHARGE, m:M_E},
+    proton:    {q: E_CHARGE, m:M_P},
+    deuteron:  {q: E_CHARGE, m:2*M_P},
+    alpha:     {q: 2*E_CHARGE, m:4*M_P}
+  };
+  const particleNameKey = { electron:"m1_opt_electron", proton:"m1_opt_proton", deuteron:"m1_opt_deuteron", alpha:"m1_opt_alpha" };
+
+  const el = {
+    particle: document.getElementById("exbParticle"),
+    B: document.getElementById("exbB"), Bn: document.getElementById("exbB_num"),
+    E: document.getElementById("exbE"), En: document.getElementById("exbE_num"),
+    V: document.getElementById("exbV"), Vn: document.getElementById("exbV_num"),
+    Angle: document.getElementById("exbAngle"), An: document.getElementById("exbAngle_num"),
+    Speed: document.getElementById("exbSpeed"), Sn: document.getElementById("exbSpeed_num"),
+    play: document.getElementById("exbPlay"),
+    reset: document.getElementById("exbReset"),
+    log: document.getElementById("exbLog"),
+    readout: document.getElementById("exbReadout"),
+    tableBody: document.querySelector("#exbTable tbody"),
+    exportBtn: document.getElementById("exbExport"),
+    clearBtn: document.getElementById("exbClear"),
+  };
+
+  let state = { tau:0, vx:0, vy:0, x:0, y:0, playing:false, trail:[], logRows:[] };
+  let derived = {};
+
+  function readParams(){
+    const p = particles[el.particle.value];
+    const B = parseFloat(el.B.value);
+    const E = parseFloat(el.E.value);
+    const v0 = parseFloat(el.V.value);
+    const theta0 = parseFloat(el.Angle.value) * Math.PI/180;
+
+    const wc = Math.abs(p.q) * B / p.m;
+    const rL = v0 / wc;
+    const Tc = 2*Math.PI/wc;
+    const fc = 1/Tc;
+    const vd = E / B;
+    const alpha = vd / v0;
+    const s = Math.sign(p.q);
+
+    derived = {p, B, E, v0, theta0, wc, rL, Tc, fc, vd, alpha, s};
+    return derived;
+  }
+
+  function resetSim(){
+    const d = readParams();
+    state.tau = 0;
+    state.vx = Math.cos(d.theta0);
+    state.vy = Math.sin(d.theta0);
+    state.x = 0; state.y = 0;
+    state.trail = [{x:0,y:0}];
+    draw();
+    updateReadout();
+  }
+
+  function rk4Step(dtau){
+    const s = derived.s, a = derived.alpha;
+    function deriv(st){ return { dvx: s*(a + st.vy), dvy: -s*st.vx, dx: st.vx, dy: st.vy }; }
+    const st0 = {vx:state.vx, vy:state.vy, x:state.x, y:state.y};
+    const k1 = deriv(st0);
+    const st1 = {vx:st0.vx+k1.dvx*dtau/2, vy:st0.vy+k1.dvy*dtau/2, x:st0.x+k1.dx*dtau/2, y:st0.y+k1.dy*dtau/2};
+    const k2 = deriv(st1);
+    const st2 = {vx:st0.vx+k2.dvx*dtau/2, vy:st0.vy+k2.dvy*dtau/2, x:st0.x+k2.dx*dtau/2, y:st0.y+k2.dy*dtau/2};
+    const k3 = deriv(st2);
+    const st3 = {vx:st0.vx+k3.dvx*dtau, vy:st0.vy+k3.dvy*dtau, x:st0.x+k3.dx*dtau, y:st0.y+k3.dy*dtau};
+    const k4 = deriv(st3);
+    state.vx += (dtau/6)*(k1.dvx+2*k2.dvx+2*k3.dvx+k4.dvx);
+    state.vy += (dtau/6)*(k1.dvy+2*k2.dvy+2*k3.dvy+k4.dvy);
+    state.x  += (dtau/6)*(k1.dx +2*k2.dx +2*k3.dx +k4.dx);
+    state.y  += (dtau/6)*(k1.dy +2*k2.dy +2*k3.dy +k4.dy);
+    state.tau += dtau;
+  }
+
+  function niceStep(x){
+    const pow = Math.pow(10, Math.floor(Math.log10(x)));
+    const f = x/pow;
+    const m = f<1.5?1:(f<3.5?2:(f<7.5?5:10));
+    return m*pow;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    let maxExt = 2;
+    for (const pt of state.trail){ maxExt = Math.max(maxExt, Math.abs(pt.x), Math.abs(pt.y)); }
+    maxExt *= 1.25;
+    const scale = Math.min(W,H)/2 / maxExt;
+    const cx = W/2, cy = H/2;
+    function toPx(x,y){ return [cx + x*scale, cy - y*scale]; }
+
+    ctx.strokeStyle = "#1a2236"; ctx.lineWidth=1;
+    const gridStep = niceStep(maxExt/4);
+    for (let g=-Math.ceil(maxExt/gridStep)*gridStep; g<=maxExt; g+=gridStep){
+      let p1 = toPx(g,0); ctx.beginPath(); ctx.moveTo(p1[0],0); ctx.lineTo(p1[0],H); ctx.stroke();
+      let p2 = toPx(0,g); ctx.beginPath(); ctx.moveTo(0,p2[1]); ctx.lineTo(W,p2[1]); ctx.stroke();
+    }
+    ctx.strokeStyle = "#2c3554"; ctx.lineWidth=1.5;
+    let o = toPx(0,0);
+    ctx.beginPath(); ctx.moveTo(0,o[1]); ctx.lineTo(W,o[1]); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(o[0],0); ctx.lineTo(o[0],H); ctx.stroke();
+
+    if (Math.abs(derived.alpha) > 1e-6){
+      const dirY = derived.alpha > 0 ? -1 : 1;
+      const Lphys = maxExt*0.35;
+      const a0 = toPx(0,0), a1 = toPx(0, dirY*Lphys);
+      ctx.strokeStyle="#22d3ee"; ctx.fillStyle="#22d3ee"; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(a0[0],a0[1]); ctx.lineTo(a1[0],a1[1]); ctx.stroke();
+      const ah=7, ang=Math.atan2(a1[1]-a0[1], a1[0]-a0[0]);
+      ctx.beginPath();
+      ctx.moveTo(a1[0],a1[1]);
+      ctx.lineTo(a1[0]-ah*Math.cos(ang-Math.PI/6), a1[1]-ah*Math.sin(ang-Math.PI/6));
+      ctx.lineTo(a1[0]-ah*Math.cos(ang+Math.PI/6), a1[1]-ah*Math.sin(ang+Math.PI/6));
+      ctx.closePath(); ctx.fill();
+      ctx.font="12px ui-monospace, monospace"; ctx.fillText(t("m1_canvas_drift"), a1[0]+8, a1[1]);
+    }
+
+    if (state.trail.length>1){
+      ctx.strokeStyle = "#a78bfa"; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i=0;i<state.trail.length;i++){
+        const p = toPx(state.trail[i].x, state.trail[i].y);
+        if (i===0) ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);
+      }
+      ctx.stroke();
+    }
+    const pp = toPx(state.x, state.y);
+    ctx.fillStyle = "#f5b942";
+    ctx.beginPath(); ctx.arc(pp[0],pp[1],5,0,2*Math.PI); ctx.fill();
+
+    ctx.fillStyle = "#8b93a8"; ctx.font="12px ui-monospace, monospace";
+    ctx.fillText(t("m1_canvas_grid") + " " + fmt(gridStep,2) + " r_L", 10, H-10);
+    ctx.fillText("\u03c4 = " + fmt(state.tau/(2*Math.PI),3) + " " + t("m1_canvas_tau"), 10, 18);
+  }
+
+  function updateReadout(){
+    const d = derived;
+    el.readout.innerHTML =
+      "<dt>"+t("m1_r_particle")+"</dt><dd>"+t(particleNameKey[el.particle.value])+"</dd>" +
+      "<dt>"+t("m1_r_wc")+"</dt><dd class='hl'>"+fmt(d.wc)+" rad/s</dd>" +
+      "<dt>"+t("m1_r_fc")+"</dt><dd>"+fmt(d.fc)+" Hz</dd>" +
+      "<dt>"+t("m1_r_Tc")+"</dt><dd>"+fmt(d.Tc)+" s</dd>" +
+      "<dt>"+t("m1_r_rL")+"</dt><dd class='hl'>"+fmt(d.rL)+" m</dd>" +
+      "<dt>"+t("m1_r_vd")+"</dt><dd class='hl'>"+fmt(d.vd)+" m/s</dd>" +
+      "<dt>"+t("m1_r_alpha")+"</dt><dd>"+fmt(d.alpha)+"</dd>" +
+      "<dt>"+t("m1_r_elapsed")+"</dt><dd>"+fmt(state.tau/(2*Math.PI)*d.Tc)+" s</dd>";
+  }
+
+  let lastT = null;
+  function loop(ts){
+    if (!state.playing){ lastT=null; return; }
+    if (lastT===null) lastT = ts;
+    let dt = (ts-lastT)/1000; lastT = ts;
+    dt = Math.min(dt, 0.05);
+    const periodsPerSec = parseFloat(el.Speed.value);
+    const dtau = dt * periodsPerSec * 2*Math.PI;
+    const steps = Math.max(1, Math.ceil(dtau/0.05));
+    const sub = dtau/steps;
+    for (let i=0;i<steps;i++) rk4Step(sub);
+    state.trail.push({x:state.x,y:state.y});
+    if (state.trail.length>4000) state.trail.shift();
+    draw(); updateReadout();
+    requestAnimationFrame(loop);
+  }
+
+  el.play.addEventListener("click", function(){
+    state.playing = !state.playing;
+    el.play.textContent = state.playing ? t("btn_pause") : t("btn_play");
+    if (state.playing) requestAnimationFrame(loop);
+  });
+  el.reset.addEventListener("click", function(){ state.playing=false; el.play.textContent=t("btn_play"); resetSim(); });
+  [el.particle, el.B, el.E, el.V, el.Angle].forEach(function(inp){
+    inp.addEventListener("input", function(){ state.playing=false; el.play.textContent=t("btn_play"); resetSim(); });
+  });
+  el.Speed.addEventListener("input", readParams);
+
+  el.log.addEventListener("click", function(){
+    readParams();
+    const row = { tau:(state.tau/(2*Math.PI)).toFixed(4), x:state.x.toFixed(4), y:state.y.toFixed(4), v:Math.hypot(state.vx,state.vy).toFixed(4) };
+    state.logRows.push(row);
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>"+row.tau+"</td><td>"+row.x+"</td><td>"+row.y+"</td><td>"+row.v+"</td>";
+    el.tableBody.appendChild(tr);
+  });
+  el.exportBtn.addEventListener("click", function(){
+    const rows = [["tau_periods","x_over_rL","y_over_rL","v_normalized"]];
+    state.logRows.forEach(function(r){ rows.push([r.tau,r.x,r.y,r.v]); });
+    downloadCSV("exb_trajectory_data.csv", rows);
+  });
+  el.clearBtn.addEventListener("click", function(){ state.logRows=[]; el.tableBody.innerHTML=""; });
+
+  linkSliderNumber(el.B, el.Bn);
+  linkSliderNumber(el.E, el.En);
+  linkSliderNumber(el.V, el.Vn);
+  linkSliderNumber(el.Angle, el.An);
+  linkSliderNumber(el.Speed, el.Sn);
+
+  resetSim();
+  RERENDERS.push(function(){
+    el.play.textContent = state.playing ? t("btn_pause") : t("btn_play");
+    draw(); updateReadout();
+  });
+})();
+
+/* =========================================================
+   MODULE 2 - Langmuir (plasma) oscillations
+   ========================================================= */
+(function(){
+  const cvSlab = document.getElementById("cvSlab");
+  const cvTrace = document.getElementById("cvTrace");
+  const ctxSlab = setupHiDPI(cvSlab);
+  const ctxTrace = setupHiDPI(cvTrace);
+  const Wslab=cvSlab._logicalW, Hslab=cvSlab._logicalH;
+  const Wtr=cvTrace._logicalW, Htr=cvTrace._logicalH;
+
+  const el = {
+    N: document.getElementById("lgN"), Nn: document.getElementById("lgN_num"),
+    play: document.getElementById("lgPlay"), reset: document.getElementById("lgReset"),
+    readout: document.getElementById("lgReadout"),
+    clearMarks: document.getElementById("lgClearMarks"),
+    p1: document.getElementById("lgP1"), p2: document.getElementById("lgP2"),
+    tmeas: document.getElementById("lgTmeas"), fmeas: document.getElementById("lgFmeas"),
+    err: document.getElementById("lgErr"),
+  };
+
+  let n=0, wp=0, fp=0, Tp=0;
+  let playing=false, tsim=0, marks=[];
+  const WINDOW_PERIODS = 5;
+
+  function readParams(){
+    n = Math.pow(10, parseFloat(el.N.value));
+    wp = Math.sqrt(n*E_CHARGE*E_CHARGE/(EPS0*M_E));
+    fp = wp/(2*Math.PI);
+    Tp = 1/fp;
+    el.readout.innerHTML =
+      "<dt>"+t("m2_r_n")+"</dt><dd>"+fmt(n)+" m\u207B\u00B3</dd>" +
+      "<dt>"+t("m2_r_wp")+"</dt><dd class='hl'>"+fmt(wp)+" rad/s</dd>" +
+      "<dt>"+t("m2_r_fp")+"</dt><dd class='hl'>"+fmt(fp)+" Hz</dd>" +
+      "<dt>"+t("m2_r_Tp")+"</dt><dd class='hl'>"+fmt(Tp)+" s</dd>";
+  }
+
+  function resetSim(){ readParams(); tsim=0; marks=[]; updateMeasure(); drawSlab(); drawTrace(); }
+
+  function drawSlab(){
+    ctxSlab.clearRect(0,0,Wslab,Hslab);
+    const xi0 = 60;
+    const xi = xi0*Math.cos(2*Math.PI*(tsim/Tp));
+    const midY = Hslab/2;
+    ctxSlab.fillStyle = "#22d3ee";
+    for (let x=40; x<Wslab-40; x+=28){ ctxSlab.beginPath(); ctxSlab.arc(x, midY+22, 4, 0, 2*Math.PI); ctxSlab.fill(); }
+    ctxSlab.fillStyle = "#a78bfa";
+    for (let x=40; x<Wslab-40; x+=28){ ctxSlab.beginPath(); ctxSlab.arc(x+xi, midY-22, 4, 0, 2*Math.PI); ctxSlab.fill(); }
+    ctxSlab.fillStyle="#8b93a8"; ctxSlab.font="12px ui-monospace, monospace";
+    ctxSlab.fillText(t("m2_canvas_ion"), 10, midY+45);
+    ctxSlab.fillText(t("m2_canvas_electron"), 10, midY-38);
+  }
+
+  function drawTrace(){
+    ctxTrace.clearRect(0,0,Wtr,Htr);
+    const tWindow = WINDOW_PERIODS*Tp;
+    const t0 = Math.max(0, tsim-tWindow);
+    const midY = Htr/2, amp=Htr*0.38;
+    ctxTrace.strokeStyle="#232b3d"; ctxTrace.lineWidth=1;
+    ctxTrace.beginPath(); ctxTrace.moveTo(0,midY); ctxTrace.lineTo(Wtr,midY); ctxTrace.stroke();
+    function xOf(tt){ return (tt-t0)/tWindow*Wtr; }
+    function yOf(val){ return midY - val*amp; }
+    ctxTrace.strokeStyle = "#f5b942"; ctxTrace.lineWidth=2; ctxTrace.beginPath();
+    const steps=400;
+    for (let i=0;i<=steps;i++){
+      const tt = t0 + i/steps*tWindow;
+      const val = Math.cos(2*Math.PI*tt/Tp);
+      const x=xOf(tt), y=yOf(val);
+      if (i===0) ctxTrace.moveTo(x,y); else ctxTrace.lineTo(x,y);
+    }
+    ctxTrace.stroke();
+    marks.forEach(function(m,i){
+      if (m<t0) return;
+      const x = xOf(m);
+      ctxTrace.strokeStyle="#4ade80"; ctxTrace.lineWidth=1.5;
+      ctxTrace.beginPath(); ctxTrace.moveTo(x,0); ctxTrace.lineTo(x,Htr); ctxTrace.stroke();
+      ctxTrace.fillStyle="#4ade80"; ctxTrace.font="11px ui-monospace, monospace";
+      ctxTrace.fillText(t("m2_canvas_peak")+" "+(i+1), x+4, 14);
+    });
+    ctxTrace.fillStyle="#8b93a8"; ctxTrace.font="12px ui-monospace, monospace";
+    ctxTrace.fillText(t("m2_canvas_trace"), 10, Htr-10);
+  }
+
+  function findNearestPeak(tGuess){
+    let best=tGuess, bestVal=-Infinity;
+    const span=Tp*0.5, N=200;
+    for (let i=0;i<=N;i++){
+      const tt = tGuess - span/2 + i/N*span;
+      if (tt<0) continue;
+      const val = Math.cos(2*Math.PI*tt/Tp);
+      if (val>bestVal){ bestVal=val; best=tt; }
+    }
+    return best;
+  }
+
+  function updateMeasure(){
+    el.p1.textContent = marks[0]!==undefined ? fmt(marks[0]/Tp,3)+" T_p" : "\u2014";
+    el.p2.textContent = marks[1]!==undefined ? fmt(marks[1]/Tp,3)+" T_p" : "\u2014";
+    if (marks.length>=2){
+      const Tmeas = Math.abs(marks[1]-marks[0]);
+      const fmeas = 1/Tmeas;
+      const errPct = 100*Math.abs(fmeas-fp)/fp;
+      el.tmeas.textContent = fmt(Tmeas)+" s";
+      el.fmeas.textContent = fmt(fmeas)+" Hz";
+      el.err.textContent = fmt(errPct,3)+" %";
+    } else {
+      el.tmeas.textContent="\u2014"; el.fmeas.textContent="\u2014"; el.err.textContent="\u2014";
+    }
+  }
+
+  cvTrace.addEventListener("click", function(ev){
+    const rect = cvTrace.getBoundingClientRect();
+    const xpx = (ev.clientX-rect.left) * (Wtr/rect.width);
+    const tWindow = WINDOW_PERIODS*Tp;
+    const t0 = Math.max(0, tsim-tWindow);
+    const tGuess = t0 + xpx/Wtr*tWindow;
+    const peak = findNearestPeak(tGuess);
+    if (marks.length>=2) marks=[];
+    marks.push(peak);
+    updateMeasure(); drawTrace();
+  });
+  el.clearMarks.addEventListener("click", function(){ marks=[]; updateMeasure(); drawTrace(); });
+
+  let lastT=null;
+  function loop(ts){
+    if (!playing){ lastT=null; return; }
+    if (lastT===null) lastT=ts;
+    let dt=(ts-lastT)/1000; lastT=ts;
+    dt = Math.min(dt,0.05);
+    tsim += dt*0.15;
+    drawSlab(); drawTrace();
+    requestAnimationFrame(loop);
+  }
+  el.play.addEventListener("click", function(){
+    playing=!playing; el.play.textContent = playing ? t("btn_pause") : t("btn_play");
+    if (playing) requestAnimationFrame(loop);
+  });
+  el.reset.addEventListener("click", function(){ playing=false; el.play.textContent=t("btn_play"); resetSim(); });
+  el.N.addEventListener("input", function(){ playing=false; el.play.textContent=t("btn_play"); resetSim(); });
+
+  linkSliderNumber(el.N, el.Nn, {
+    toDisplay: function(v){ return Math.pow(10, v); },
+    fromDisplay: function(d){ return Math.log10(Math.max(d, 1e-30)); }
+  });
+
+  resetSim();
+  RERENDERS.push(function(){
+    el.play.textContent = playing ? t("btn_pause") : t("btn_play");
+    readParams(); updateMeasure(); drawSlab(); drawTrace();
+  });
+})();
+
+/* =========================================================
+   MODULE 3 - Debye shielding
+   ========================================================= */
+(function(){
+  const canvas = document.getElementById("cvDebye");
+  const ctx = setupHiDPI(canvas);
+  const W = canvas._logicalW, H = canvas._logicalH;
+
+  const el = {
+    N: document.getElementById("dbN"), Nn: document.getElementById("dbN_num"),
+    T: document.getElementById("dbT"), Tn: document.getElementById("dbT_num"),
+    readout: document.getElementById("dbReadout"),
+    guess: document.getElementById("dbGuess"),
+    check: document.getElementById("dbCheck"),
+    checkOut: document.getElementById("dbCheckOut"),
+  };
+
+  let n, Te_eV, lambdaD, probeR;
+  const rMaxFactor = 6;
+  const marginL=60, marginB=36, marginT=16, marginR=16;
+
+  function readParams(){
+    n = Math.pow(10, parseFloat(el.N.value));
+    Te_eV = Math.pow(10, parseFloat(el.T.value));
+    const kTe = Te_eV*E_CHARGE;
+    lambdaD = Math.sqrt(EPS0*kTe/(n*E_CHARGE*E_CHARGE));
+    if (probeR===undefined) probeR = lambdaD;
+  }
+  function phiScreened(r){ return E_CHARGE/(4*Math.PI*EPS0*Math.max(r,1e-12)) * Math.exp(-r/lambdaD); }
+  function phiBare(r){ return E_CHARGE/(4*Math.PI*EPS0*Math.max(r,1e-12)); }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const rMax = rMaxFactor*lambdaD;
+    const plotW = W-marginL-marginR, plotH = H-marginT-marginB;
+    const yMax = phiBare(0.08*lambdaD);
+    function xOf(r){ return marginL + (r/rMax)*plotW; }
+    function yOf(phi){ const c = Math.min(phi, yMax); return marginT + plotH*(1 - c/yMax); }
+
+    ctx.strokeStyle="#2c3554"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(marginL, marginT); ctx.lineTo(marginL, H-marginB); ctx.lineTo(W-marginR, H-marginB); ctx.stroke();
+    ctx.fillStyle="#8b93a8"; ctx.font="12px ui-monospace, monospace";
+    ctx.fillText(t("m3_axis_r"), W-marginR-40, H-marginB+22);
+    ctx.save(); ctx.translate(16, marginT+plotH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText(t("m3_axis_phi"), -70, 0); ctx.restore();
+
+    for (let k=1;k<=rMaxFactor;k++){
+      const x = xOf(k*lambdaD);
+      ctx.strokeStyle="#1a2236"; ctx.beginPath(); ctx.moveTo(x,marginT); ctx.lineTo(x,H-marginB); ctx.stroke();
+      ctx.fillStyle="#5b6480"; ctx.fillText(k+"\u03BB_D", x-12, H-marginB+16);
+    }
+
+    ctx.strokeStyle="#22d3ee"; ctx.lineWidth=2; ctx.beginPath();
+    for (let i=0;i<=300;i++){ const r=i/300*rMax, x=xOf(r), y=yOf(phiBare(r)); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke();
+
+    ctx.strokeStyle="#a78bfa"; ctx.lineWidth=2.5; ctx.beginPath();
+    for (let i=0;i<=300;i++){ const r=i/300*rMax, x=xOf(r), y=yOf(phiScreened(r)); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.stroke();
+
+    const xld = xOf(lambdaD);
+    ctx.strokeStyle="#f5b94266"; ctx.setLineDash([4,4]); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(xld,marginT); ctx.lineTo(xld,H-marginB); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const xp = xOf(probeR);
+    ctx.strokeStyle="#f5b942"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(xp,marginT); ctx.lineTo(xp,H-marginB); ctx.stroke();
+    const yScr = yOf(phiScreened(probeR)), yBare = yOf(phiBare(probeR));
+    ctx.fillStyle="#f5b942"; ctx.beginPath(); ctx.arc(xp,yScr,5,0,2*Math.PI); ctx.fill();
+    ctx.fillStyle="#22d3ee"; ctx.beginPath(); ctx.arc(xp,yBare,5,0,2*Math.PI); ctx.fill();
+
+    updateReadout();
+  }
+
+  function updateReadout(){
+    el.readout.innerHTML =
+      "<dt>"+t("m3_r_lamD")+"</dt><dd class='hl'>"+fmt(lambdaD)+" m</dd>" +
+      "<dt>"+t("m3_r_r")+"</dt><dd>"+fmt(probeR)+" m</dd>" +
+      "<dt>"+t("m3_r_ratio_rl")+"</dt><dd>"+fmt(probeR/lambdaD)+"</dd>" +
+      "<dt>"+t("m3_r_phis")+"</dt><dd class='hl'>"+fmt(phiScreened(probeR))+" V</dd>" +
+      "<dt>"+t("m3_r_phib")+"</dt><dd>"+fmt(phiBare(probeR))+" V</dd>" +
+      "<dt>"+t("m3_r_ratio")+"</dt><dd>"+fmt(phiScreened(probeR)/phiBare(probeR))+"</dd>";
+  }
+
+  function pointerToR(clientX){
+    const rect = canvas.getBoundingClientRect();
+    const xpx = (clientX-rect.left) * (W/rect.width);
+    const plotW = W-marginL-marginR;
+    const rMax = rMaxFactor*lambdaD;
+    let r = (xpx-marginL)/plotW*rMax;
+    r = Math.max(0.001*lambdaD, Math.min(rMax, r));
+    return r;
+  }
+  let dragging=false;
+  canvas.addEventListener("pointerdown", function(ev){ dragging=true; probeR=pointerToR(ev.clientX); draw(); });
+  window.addEventListener("pointermove", function(ev){ if(dragging){ probeR=pointerToR(ev.clientX); draw(); } });
+  window.addEventListener("pointerup", function(){ dragging=false; });
+
+  el.check.addEventListener("click", function(){
+    const g = parseFloat(el.guess.value);
+    if (isNaN(g) || g<=0){
+      el.checkOut.innerHTML = "<dt>"+t("m3_check_exact")+"</dt><dd class='hl'>"+t("m3_check_enter")+"</dd>";
+      return;
+    }
+    const errPct = 100*Math.abs(g-lambdaD)/lambdaD;
+    el.checkOut.innerHTML =
+      "<dt>"+t("m3_check_exact")+"</dt><dd>"+fmt(lambdaD)+" m</dd>" +
+      "<dt>"+t("m3_check_yours")+"</dt><dd>"+fmt(g)+" m</dd>" +
+      "<dt>"+t("m3_check_err")+"</dt><dd class='"+(errPct<15?'hl':'')+"'>"+fmt(errPct,3)+" %</dd>";
+  });
+
+  el.T.addEventListener("input", function(){ readParams(); if(probeR>rMaxFactor*lambdaD) probeR=lambdaD; draw(); });
+  el.N.addEventListener("input", function(){ readParams(); if(probeR>rMaxFactor*lambdaD) probeR=lambdaD; draw(); });
+
+  linkSliderNumber(el.N, el.Nn, {
+    toDisplay: function(v){ return Math.pow(10, v); },
+    fromDisplay: function(d){ return Math.log10(Math.max(d, 1e-30)); }
+  });
+  linkSliderNumber(el.T, el.Tn, {
+    toDisplay: function(v){ return Math.pow(10, v); },
+    fromDisplay: function(d){ return Math.log10(Math.max(d, 1e-6)); }
+  });
+
+  readParams(); draw();
+  RERENDERS.push(function(){ draw(); });
+})();
+
+/* ---------- initial language ---------- */
+(function(){
+  let initial = "en";
+  const m = location.hash.match(/lang=([a-z]+)/);
+  if (m && I18N.h_title && I18N.h_title[m[1]]) initial = m[1];
+  else {
+    try { const saved = localStorage.getItem("plasmalab_lang"); if (saved && I18N.h_title && I18N.h_title[saved]) initial = saved; } catch(e){}
+  }
+  setLanguage(initial);
+})();
+</script>
+</body>
+</html>
